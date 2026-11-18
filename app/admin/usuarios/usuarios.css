@@ -9,8 +9,10 @@
 .au-tablewrap { overflow-x: auto; }
 .au-name { font-weight: 800; font-size: 1.05rem; }
 .au-me { margin-left: 8px; }
-.au-email { color: var(--vc-muted); word-break: break-all; }
-.au-rowactions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.au-email { color: var(--vc-muted); white-space: nowrap; }
+.au-tablewrap .ad-table { min-width: 760px; } /* en pantallas angostas la tabla se desplaza, sin cortar emails */
+.au-rowactions { flex-wrap: nowrap; }
+.au-rowactions { display: flex; gap: 8px; justify-content: flex-end; }
 .au-edit td { background: var(--vc-green-soft); }
 .au-confirm td { background: var(--vc-surface); }
 .au-confirm__box { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }

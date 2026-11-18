@@ -43,7 +43,7 @@ npm run seed      # crea data/vibe.db con los datos de demo (se puede repetir: n
 
 La semilla es opcional: la app la aplica sola al arrancar. Carga el catálogo completo, los
 clientes de demo, el personal y pedidos anteriores (`entregado`) para que «Pedí lo de siempre»
-funcione desde el primer uso. Volver a correrla no duplica nada ni pisa lo editado en administración.
+funcione desde el primer uso. Volver a correrla no duplica nada ni pisa (ni resucita) lo editado o borrado en administración: se aplica una sola vez por versión.
 
 ## Configuración
 

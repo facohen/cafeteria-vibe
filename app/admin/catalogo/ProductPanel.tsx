@@ -49,7 +49,9 @@ export default function ProductPanel({
     e.preventDefault();
     setError(null);
     const body: Record<string, unknown> = { name, description, price: num(price), categoryId, icon, available };
-    if (sort.trim() !== "") body.sort = num(sort);
+    // Si cambia de categoría sin tocar el orden, no se manda: el servidor lo pone al final de la nueva.
+    const sortTouched = isNew || sort !== String(product.sort);
+    if (sort.trim() !== "" && (sortTouched || categoryId === product?.categoryId)) body.sort = num(sort);
     setBusy(true);
     try {
       const r = await run(

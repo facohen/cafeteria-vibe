@@ -137,7 +137,7 @@ Propios:
 - CA-18 (T2): un producto marcado no disponible no se puede pedir (ni por «Pedí lo de siempre»).
 - CA-19 (T2): «Pedí lo de siempre» aparece solo si el cliente tiene un pedido anterior propio, repite sus productos y va directo al pago.
 - CA-20 (T2): «Pedí lo de siempre» nunca usa pedidos de otro cliente.
-- CA-21 (T2): solo admin accede a la gestión; cliente y cocina reciben 403 en la API y redirección en las páginas.
+- CA-21 (T2): solo admin accede a la gestión; en la API cocina recibe 403 y un cliente 401 (solo tiene la cookie del kiosco, que la gestión no lee; con un token de cliente en la cookie del personal, 403); las páginas redirigen a `/personal`.
 - CA-22 (T2): la semilla completa (catálogo, varios clientes, pedidos anteriores) se puede cargar de nuevo sin duplicar ni pisar datos.
 - CA-23 (T2): `npm test` amplía las pruebas con CA-15 a CA-21 y pasa.
 - CA-24 (T2): instalación y ejecución verificadas desde un estado limpio, con resultados en `docs/VALIDACION.md`.
@@ -167,8 +167,12 @@ Decisiones:
 - **Transiciones atómicas**: cada cambio de estado es un `UPDATE ... WHERE id = ? AND status = ?`
   (o una transacción); si no cambia ninguna fila, `INVALID_TRANSITION`. Evita dobles pagos o
   carreras entre ventanas.
-- **Semilla con `INSERT OR IGNORE`** por clave natural (email, slug): se puede correr cuantas veces
-  se quiera sin duplicar ni pisar lo editado. La app la aplica sola al abrir la base.
+- **Semilla una vez por versión + `INSERT OR IGNORE`**: `seed()` corre dentro de una transacción y
+  deja la marca `seed_version` en la tabla `meta`; con la marca al día no hace nada. Así lo que admin
+  edite **o borre** (p. ej. el email de una cuenta de demo, una categoría) no reaparece al reiniciar
+  —sin la marca, renombrar `admin@vibecoffee.local` hacía que volviera a crearse con la contraseña
+  pública—. Una base anterior sin marca (tarea 1) recibe una vez lo que le falta, por clave natural
+  (email, slug), sin pisar lo existente. La app la aplica sola al abrir la base.
 - **SQLite síncrono** (`better-sqlite3`): API simple, sin pool; suficiente para una demo local.
 
 Decisiones de la tarea 2:
@@ -181,8 +185,8 @@ Decisiones de la tarea 2:
 - **Slug automático** a partir del nombre (único, con sufijo `-2`, `-3`…) y fijo después: admin no
   tiene que inventar claves y la semilla, que identifica por slug, sigue siendo idempotente aunque
   se renombre un producto.
-- **Pedidos anteriores de la semilla solo si el cliente no tiene pedidos**: los pedidos no tienen
-  clave natural; ese criterio evita duplicarlos al repetir la semilla y no toca pedidos reales.
+- **Pedidos anteriores de la semilla solo si el usuario es cliente y no tiene pedidos**: los pedidos
+  no tienen clave natural; ese criterio (más la marca de versión) evita duplicarlos y no toca pedidos reales.
 - **«Pedí lo de siempre» reutiliza `POST /api/orders`**: el kiosco manda los `productId` y
   cantidades del último pedido; precios, total y disponibilidad salen de la base como en cualquier
   pedido. No hay un camino de creación aparte que validar.
@@ -200,6 +204,7 @@ Esquema completo en [lib/db.ts](../lib/db.ts) (`SCHEMA`). Fechas en texto ISO UT
 |---|---|---|
 | `users` | `email` único (sin distinguir mayúsculas, guardado en minúsculas), `name`, `role` ∈ cliente/cocina/admin, `password_hash`, `active` | `password_hash` solo para personal; baja lógica = `active = 0` (nunca se borran) |
 | `sessions` | `token` (PK), `user_id` | se borran con el usuario (`ON DELETE CASCADE`) |
+| `meta` | `key` (PK), `value` | `seed_version`: versión de la semilla ya aplicada |
 | `categories` | `slug` único, `name`, `sort` | |
 | `products` | `slug` único, `category_id`, `name`, `description`, `price` entero > 0, `icon`, `available`, `sort` | `icon` ∈ `ICON_KEYS`; no se borran (se marcan no disponibles) |
 | `orders` | `user_id`, `status`, `total`, `created_at`, `paid_at`, `ready_at`, `finished_at` | índices por usuario/fecha y por estado |
@@ -297,7 +302,7 @@ Rutas de la tarea 2 (JSON; errores como arriba):
 | `POST /api/admin/products` | ídem | `ProductInput` | `{ product: Product }` |
 | `PATCH /api/admin/products/:id` | ídem | `ProductPatch` | `{ product: Product }` |
 
-En `/api/admin/**`: sin sesión del personal → 401; cliente o cocina → 403.
+En `/api/admin/**`: sin sesión del personal → 401 (es el caso de un cliente: solo tiene `vc_session`); sesión del personal sin rol admin (cocina) → 403.
 
 ### Páginas
 
@@ -351,7 +356,7 @@ La API vuelve a verificar todo: la página no es el control.
   tablero; admin: gestión); `/api/auth/demo-accounts` expone solo email, nombre y rol de cuentas activas, más la contraseña de demo.
 - **Administración solo con la sesión del personal**: `/api/admin/**` usa `handle(fn, "staff")` y
   lee solo `vc_staff_session`; una sesión de kiosco nunca da acceso a la gestión, y cada servicio
-  exige rol `admin` (401 sin sesión, 403 cliente o cocina).
+  exige rol `admin` (401 sin sesión del personal —incluido un cliente—, 403 cocina).
 - **Validación en el servidor** de todo alta y edición (tipos, formato de email, unicidad, rol ∈
   `ROLES`, ícono ∈ `ICON_KEYS`, enteros y rangos de `ADMIN_LIMITS`); la interfaz de admin no es el control.
 - **Baja y cambio de rol efectivos al instante**: dar de baja o cambiar el rol borra las sesiones
@@ -359,6 +364,10 @@ La API vuelve a verificar todo: la página no es el control.
   usuarios inactivos y los logins los rechazan.
 - **`password_hash` nunca expuesto**: los servicios de usuarios devuelven `User` (sin hash) y la
   contraseña recibida solo se guarda hasheada con scrypt.
+- **Cambio de contraseña del personal** también borra sus sesiones abiertas.
+- **Personal nuevo sin contraseña** recibe la de demo (`cafe1234`) y, como toda cuenta activa del
+  personal, aparece en `/personal` con la contraseña precargada: es una decisión de demo; en un uso
+  real habría que pedir contraseña propia.
 - **Admin no se auto-bloquea**: un admin no puede quitarse el rol `admin` ni darse de baja
   (`VALIDATION`), así siempre queda al menos quien está administrando.
 

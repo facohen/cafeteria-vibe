@@ -370,3 +370,27 @@ describe("deactivateUser (CA-16)", () => {
 function reactivate(admin: SessionUser, id: number) {
   updateUser(admin, id, { active: true });
 }
+
+describe("cambio de contraseña", () => {
+  it("password nueva para personal: borra sus sesiones; entra con la nueva y no con la vieja", () => {
+    const admin = adminActor();
+    const { token, user } = loginStaff(KITCHEN_EMAIL, STAFF_DEMO_PASSWORD);
+    const u = updateUser(admin, user.id, { password: "nueva-clave-1" });
+    expectNoSecrets(u);
+    expect(getSessionUser(token)).toBeNull();
+    expect(sessionCount(user.id)).toBe(0);
+    expectCode(() => loginStaff(KITCHEN_EMAIL, STAFF_DEMO_PASSWORD), "UNAUTHENTICATED");
+    expect(loginStaff(KITCHEN_EMAIL, "nueva-clave-1").user.id).toBe(user.id);
+  });
+
+  it("password para un cliente se ignora: sin hash y su sesión sigue viva", () => {
+    const admin = adminActor();
+    const { token, user } = loginCustomer(CUSTOMER_EMAIL);
+    const u = updateUser(admin, user.id, { password: "lo-que-sea-123" });
+    expect(u.role).toBe("cliente");
+    expect(userRow(CUSTOMER_EMAIL).password_hash).toBeNull();
+    expect(getSessionUser(token)?.id).toBe(user.id);
+    expectCode(() => loginStaff(CUSTOMER_EMAIL, "lo-que-sea-123"), "UNAUTHENTICATED");
+  });
+});
+

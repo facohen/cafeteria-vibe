@@ -60,8 +60,10 @@ docs/              TECNICO.md (diseño, contratos, seguridad), VALIDACION.md (ac
 - **Administración**: servicios con `requireRole(actor, "admin")`, cuerpos recibidos como `unknown`
   y validados con `ADMIN_LIMITS`; baja lógica de usuarios y sin borrado de productos (ver
   docs/TECNICO.md, «Decisiones de la tarea 2»).
-- **Semilla**: idempotente por clave natural (email, slug); los pedidos de ejemplo se cargan solo
-  para clientes sin pedidos. Nunca pisar datos existentes.
+- **Semilla**: se aplica una vez por `SEED_VERSION` (marca en la tabla `meta`) y con INSERT OR
+  IGNORE por clave natural (email, slug); los pedidos de ejemplo van solo a clientes sin pedidos.
+  Nunca pisar datos existentes. Si agregás datos a la semilla, subí `SEED_VERSION` (una base ya
+  sembrada recibe solo lo que falta).
 - Código de base de datos solo en el servidor (`better-sqlite3` es nativo).
 - Pruebas con base `:memory:` (`openDb(":memory:")` + `setDbForTests`).
 

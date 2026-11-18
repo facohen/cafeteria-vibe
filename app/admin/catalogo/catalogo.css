@@ -20,8 +20,10 @@
 /* Categorías */
 .ac-cats {
   background: var(--vc-surface); border-radius: var(--vc-radius); padding: 18px; display: flex;
-  flex-direction: column; gap: 12px; position: sticky; top: 16px;
+  flex-direction: column; gap: 12px; position: sticky; top: 96px; /* debajo de la barra superior sticky */
 }
+/* En una columna no es sticky: taparía la primera fila de productos al bajar. */
+@media (max-width: 860px) { .ac-cats { position: static; } }
 .ac-cats h2, .ac-products__head h2 { margin: 0; font-size: 1.3rem; font-weight: 900; }
 .ac-cats__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .ac-cat { background: var(--vc-bg); border: 2px solid var(--vc-line); border-radius: var(--vc-radius-sm); overflow: hidden; }

@@ -31,7 +31,7 @@ detalle). No marcar «ok» lo que no se ejecutó. -->
 | CA-18 | Producto no disponible no se puede pedir (tampoco con «Pedí lo de siempre») | app + `npm test` | pendiente |
 | CA-19 | «Pedí lo de siempre» solo con pedido anterior propio; repite y va al pago | app (cliente con y sin pedidos) + `npm test` | pendiente |
 | CA-20 | «Pedí lo de siempre» nunca usa pedidos de otro cliente | `npm test` | pendiente |
-| CA-21 | Solo admin gestiona: cliente/cocina 403 en API y redirección en páginas | app + `npm test` (HTTP) | pendiente |
+| CA-21 | Solo admin gestiona: API cocina 403, cliente 401 (sin cookie del personal); páginas redirigen | app + `npm test` (HTTP) | pendiente |
 | CA-22 | Semilla completa repetible sin duplicar ni pisar | seed doble + conteo; editar en admin y volver a sembrar | pendiente |
 | CA-23 | `npm test` amplía con CA-15 a CA-21 y pasa | `npm test` | pendiente |
 | CA-24 | Instalación y ejecución desde estado limpio | ver «Instalación desde estado limpio» | pendiente |

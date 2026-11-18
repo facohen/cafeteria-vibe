@@ -230,7 +230,9 @@ export type SessionScope = "kiosk" | "staff";
 
 /**
  * Administración — todo exige rol admin con la sesión del PERSONAL (STAFF_SESSION_COOKIE,
- * `handle(fn, "staff")`). Sin sesión -> UNAUTHENTICATED (401); cliente o cocina -> FORBIDDEN (403).
+ * `handle(fn, "staff")`). Sin sesión del personal -> UNAUTHENTICATED (401): es lo que recibe un cliente,
+ * que solo tiene la cookie del kiosco (loginStaff no admite clientes); sesión del personal sin rol admin
+ * (cocina) -> FORBIDDEN (403).
  * Orden de chequeo: sesión → rol → validación de id → existencia (NOT_FOUND) → validación del cuerpo.
  * Los cuerpos se reciben como `unknown` y se validan en el servicio; campos extra se ignoran.
  */

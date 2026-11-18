@@ -18,6 +18,10 @@ CREATE TABLE IF NOT EXISTS users (
   active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
 );
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS sessions (
   token TEXT PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -190,13 +194,20 @@ export const SEED = {
 const MINUTE = 60_000;
 
 /**
- * Carga la semilla sin duplicar ni pisar: INSERT OR IGNORE por clave natural
- * (email / slug). Lo que ya existe (p. ej. precios editados por admin) se conserva.
+ * Carga la semilla sin duplicar ni pisar: una sola vez por SEED_VERSION (tabla meta) y con
+ * INSERT OR IGNORE por clave natural (email / slug). Lo que ya existe (p. ej. precios editados por admin) se conserva.
  * Los pedidos de ejemplo (sin clave natural) se cargan solo para clientes sin ningún pedido;
  * copian nombre, precio e ícono actuales del producto y quedan `entregado`.
  */
+export const SEED_VERSION = "2";
+
 export function seed(db: DB): void {
   const tx = db.transaction(() => {
+    // Se aplica una vez por versión de semilla: después, lo que admin cambie o borre (email de una
+    // cuenta de demo, una categoría) no reaparece al reiniciar. Una base de la tarea 1 (sin marca)
+    // recibe una vez lo que le falte, sin pisar lo existente.
+    const done = db.prepare("SELECT value FROM meta WHERE key = 'seed_version'").get() as { value: string } | undefined;
+    if (done && done.value >= SEED_VERSION) return;
     const insUser = db.prepare(
       "INSERT OR IGNORE INTO users (email, name, role, password_hash) VALUES (?, ?, ?, ?)",
     );
@@ -216,7 +227,7 @@ export function seed(db: DB): void {
     }
 
     // Pedidos de ejemplo: solo para clientes que todavía no tienen ningún pedido.
-    const userRow = db.prepare("SELECT id FROM users WHERE email = ?");
+    const userRow = db.prepare("SELECT id FROM users WHERE email = ? AND role = 'cliente'");
     const hasOrders = db.prepare("SELECT 1 FROM orders WHERE user_id = ? LIMIT 1");
     const prodRow = db.prepare("SELECT id, name, price, icon FROM products WHERE slug = ?");
     const insOrder = db.prepare(
@@ -251,6 +262,7 @@ export function seed(db: DB): void {
       );
       for (const l of lines) insItem.run(id, l.p.id, l.p.name, l.p.price, l.q, l.p.icon);
     }
+    db.prepare("INSERT INTO meta (key, value) VALUES ('seed_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(SEED_VERSION);
   });
   tx();
 }

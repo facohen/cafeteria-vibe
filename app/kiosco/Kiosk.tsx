@@ -155,6 +155,8 @@ export default function Kiosk() {
         if (cancelled) return;
         setUser(me);
         setCatalog(cat);
+        await loadUsual(); // también si se retoma un pedido: al cancelar el QR vuelve al menú con la tarjeta
+        if (cancelled) return;
         const savedId = readOrderId();
         if (savedId) {
           try {
@@ -175,8 +177,6 @@ export default function Kiosk() {
           }
           saveOrderId(null);
         }
-        await loadUsual();
-        if (cancelled) return;
         setStep("menu");
       } catch {
         if (!cancelled) setStep("welcome");
@@ -402,7 +402,7 @@ export default function Kiosk() {
           busy={busy}
           error={error}
           onDismissError={() => setError(null)}
-          usual={usual}
+          usual={Object.keys(cart).length === 0 ? usual : null /* con carrito armado no se ofrece: evita perderlo */}
           usualNotice={usualNotice}
           onRepeat={repeatUsual}
         />

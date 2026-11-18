@@ -150,7 +150,8 @@ export function updateUser(actor: SessionUser | null, id: unknown, patch: unknow
         .prepare("UPDATE users SET email = ?, name = ?, role = ?, active = ?, password_hash = ? WHERE id = ?")
         .run(email, name, role, active ? 1 : 0, hash, userId),
     );
-    if (roleChanged || deactivated) deleteSessions(userId);
+    const passwordChanged = isStaffRole(role) && body.password !== undefined;
+    if (roleChanged || deactivated || passwordChanged) deleteSessions(userId);
   })();
   return toUser(findRow(userId));
 }

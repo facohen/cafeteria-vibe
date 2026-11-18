@@ -244,3 +244,29 @@ describe("formas de respuesta y códigos", () => {
     expect(res.headers.get("cache-control")).toContain("no-store");
   });
 });
+
+describe("PATCH con cuerpo no JSON: existencia antes que el cuerpo", () => {
+  const cases = [
+    { name: "users", mod: userRoute, existing: () => String(sofiaId()) },
+    { name: "products", mod: productRoute, existing: () => String(productId("latte")) },
+    { name: "categories", mod: categoryRoute, existing: () => String(catId("cafes")) },
+  ];
+  for (const c of cases) {
+    it(`PATCH /api/admin/${c.name}/:id — inexistente + no JSON → 404; existente + no JSON → 400`, async () => {
+      const token = adminToken();
+      const mod = await c.mod();
+      const missing = await call(mod.PATCH(req(`/api/admin/${c.name}/99999`, { staffToken: token, method: "PATCH", body: "{nope" }), ctx("99999")));
+      expect(missing.status, JSON.stringify(missing.body)).toBe(404);
+      expect(missing.body.error.code).toBe("NOT_FOUND");
+      const id = c.existing();
+      const bad = await call(mod.PATCH(req(`/api/admin/${c.name}/${id}`, { staffToken: token, method: "PATCH", body: "{nope" }), ctx(id)));
+      expect(bad.status, JSON.stringify(bad.body)).toBe(400);
+      expect(bad.body.error.code).toBe("VALIDATION");
+      // id inválido + no JSON → 400 (validación de id antes que existencia)
+      const invalid = await call(mod.PATCH(req(`/api/admin/${c.name}/abc`, { staffToken: token, method: "PATCH", body: "{nope" }), ctx("abc")));
+      expect(invalid.status).toBe(400);
+      // sin sesión + no JSON → 401
+      expect((await call(mod.PATCH(req(`/api/admin/${c.name}/99999`, { method: "PATCH", body: "{nope" }), ctx("99999")))).status).toBe(401);
+    });
+  }
+});
