@@ -61,6 +61,15 @@ type Handler<P extends Params> = (
   params: P,
 ) => unknown | Promise<unknown>;
 
+/** Host de un header Origin; null si es "null" u otro valor no parseable (→ se rechaza). */
+function originHost(origin: string): string | null {
+  try {
+    return new URL(origin).host || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Envuelve un Route Handler: resuelve el actor desde la cookie, espera `params` (Promise en Next 16),
  * serializa el resultado como JSON (o lo devuelve tal cual si ya es un Response) y traduce errores.
@@ -71,7 +80,7 @@ export function handle<P extends Params = Record<string, never>>(fn: Handler<P>)
       // Anti-CSRF: un navegador siempre manda Origin en POST; si es de otro origen (incluso otro
       // puerto del mismo host) se rechaza antes de tocar la sesión.
       const origin = req.headers.get("origin");
-      if (req.method !== "GET" && origin && new URL(origin).host !== req.headers.get("host")) {
+      if (req.method !== "GET" && origin && originHost(origin) !== req.headers.get("host")) {
         throw new AppError("FORBIDDEN", "Origen no permitido");
       }
       const actor = getSessionUser(getSessionToken(req));

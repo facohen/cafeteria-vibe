@@ -63,6 +63,11 @@ data/              base SQLite (no versionada)
   ```bash
   NEXT_DIST_DIR=.next-kiosco VIBE_DB_PATH=data/kiosco.db npx next dev -p 3101
   ```
+  Next agrega `.next-<x>/types/**` al `include` de `tsconfig.json` al arrancar con otro
+  `NEXT_DIST_DIR`: no commitear esas líneas (dejar solo `.next/types` y `.next/dev/types`).
+  Borrar la carpeta `.next-<x>` al terminar.
+- Navegador: las cookies no distinguen puerto. Dos sesiones a la vez (kiosco y cocina) necesitan
+  orígenes distintos: `localhost` y `127.0.0.1`, o `<algo>.localhost`.
 - Quien construye una parte no la revisa ni la verifica: lo hace otro agente.
 
 ## Antes de commit

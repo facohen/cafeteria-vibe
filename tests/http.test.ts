@@ -63,6 +63,8 @@ describe("origen", () => {
     const body = JSON.stringify({ items: [{ productId: 1, quantity: 1 }] });
     const cross = await status(ordersRoute.POST(req("/api/orders", { token, method: "POST", body, origin: "http://localhost:3103" }), noParams));
     expect(cross.status).toBe(403);
+    const nullOrigin = await status(ordersRoute.POST(req("/api/orders", { token, method: "POST", body, origin: "null" }), noParams));
+    expect(nullOrigin.status).toBe(403);
     const same = await status(ordersRoute.POST(req("/api/orders", { token, method: "POST", body, origin: "http://localhost" }), noParams));
     expect(same.status).toBe(200);
   });
