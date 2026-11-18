@@ -65,12 +65,23 @@ export default function Kiosk() {
     setStep("welcome");
   }, []);
 
-  /** Muestra el mensaje de la API; si la sesión ya no vale (401) vuelve a la bienvenida. */
+  /**
+   * Muestra el mensaje de la API. Si la sesión ya no vale (401) o ya no es la del cliente dueño
+   * (403: p. ej. alguien entró como personal en este mismo navegador y pisó la cookie), vuelve a la
+   * bienvenida en vez de seguir reintentando.
+   */
   const handleError = useCallback(
     (e: unknown) => {
       const err = e as ApiErr;
       if (err?.status === 401) {
         resetToWelcome("Tu sesión se cerró. Tocá para empezar de nuevo.");
+        return;
+      }
+      if (err?.status === 403) {
+        saveOrderId(null);
+        resetToWelcome(
+          "La sesión de este kiosco cambió (¿se entró como personal en este mismo navegador?). Tocá para empezar de nuevo.",
+        );
         return;
       }
       setError(err?.message || "Algo salió mal. Probá de nuevo.");
@@ -178,7 +189,7 @@ export default function Kiosk() {
       } catch (e) {
         if (stopped) return;
         const err = e as ApiErr;
-        if (err.status === 401) handleError(err);
+        if (err.status === 401 || err.status === 403) handleError(err);
         else if (err.status) setError(err.message);
         else setOffline(true); // error de red: seguimos reintentando
       } finally {
