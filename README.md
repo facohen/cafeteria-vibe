@@ -41,6 +41,9 @@ npm install
 npm run seed      # crea data/vibe.db con los datos de demo (se puede repetir: no duplica ni pisa)
 ```
 
+Si `npm install` avisa que no ejecutó el script de instalación de `better-sqlite3`, no hace
+falta aprobarlo: el paquete trae binarios precompilados (Linux, macOS y Windows, x64 y arm64).
+
 La semilla es opcional: la app la aplica sola al arrancar. Carga el catálogo completo, los
 clientes de demo, el personal y pedidos anteriores (`entregado`) para que «Pedí lo de siempre»
 funcione desde el primer uso. Volver a correrla no duplica nada ni pisa (ni resucita) lo editado o borrado en administración: se aplica una sola vez por versión.
