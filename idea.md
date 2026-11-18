@@ -1,4 +1,4 @@
-- **Vibe Coffee.** App take away de cafetería para una demo en vivo. En un kiosco táctil vertical, el cliente entra con Google, arma su pedido o lo repite en un toque («Pedí lo de siempre») y paga con QR. Login y pago simulados, sin celular.
+- **Vibe Coffee.** App take away de cafetería para una demo en vivo. En un kiosco tactil vertical, el cliente entra con Google, arma su pedido o lo repite en un toque («Pedí lo de siempre») y paga con QR. Login y pago simulados, sin celular.
 - **Personal.** Entrada única con cuenta demo precargada; el rol lleva a cocina o a administración. Cocina recibe los pedidos en tiempo real y los marca listos, y el cliente ve el aviso en pantalla. Admin gestiona usuarios, roles, categorías, productos, precios y disponibilidad.
 - **Diseño.** Como los kioscos de autopedido de McDonald's, adaptado a café: pocas pantallas y toques, mucho blanco, verde claro de marca e íconos propios para las bebidas.
 - **Implementación.** Next.js y SQLite en local, con datos de demo. Tiempo real con lo más simple, sin pruebas automáticas de esa parte. Sin stock ni opciones de producto. Decidí el resto.
