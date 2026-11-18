@@ -63,6 +63,8 @@ npm run build && npm start   # producción local: http://localhost:3000
 2. Ventana B: abrí el kiosco en **otro origen**, http://127.0.0.1:3000 (o en una ventana privada).
    Una ventana común del mismo navegador comparte la cookie de sesión con la A (las cookies no
    distinguen puerto ni ventana) y un login pisaría al otro.
+   En `npm run dev`, `127.0.0.1` ya está habilitado en `allowedDevOrigins` (`next.config.ts`);
+   para otro host (p. ej. la IP de red) agregalo ahí y reiniciá el servidor.
 3. En B: «Tocá para pedir» → Sofía → agregá productos de varias categorías → confirmá.
 4. En B: aparece el QR con el importe → «Simular pago aprobado».
 5. En A: el pedido aparece solo, en unos 2 s. Tocá «Marcar listo».
