@@ -1,8 +1,9 @@
 # CLAUDE.md — Vibe Coffee
 
 Guía para trabajar en este repo. Uso de la app: [README.md](README.md). Diseño, contratos y
-seguridad: [docs/TECNICO.md](docs/TECNICO.md). Validación: `docs/VALIDACION.md` (se crea en la
-tarea 2). Requisitos: [spec-1.md](spec-1.md) (tarea 1) y [spec-2.md](spec-2.md) (tarea 2).
+seguridad: [docs/TECNICO.md](docs/TECNICO.md). Criterios de aceptación, pruebas realizadas y
+recorrido de demostración: [docs/VALIDACION.md](docs/VALIDACION.md). Requisitos:
+[spec-1.md](spec-1.md) (tarea 1) y [spec-2.md](spec-2.md) (tarea 2).
 
 **Regla: cada cambio debe actualizar la documentación afectada** (README, CLAUDE.md, docs/TECNICO.md,
 docs/VALIDACION.md) en el mismo commit.
@@ -25,18 +26,23 @@ Requiere Node 24 (la semilla carga TypeScript nativo).
 
 ```
 app/               páginas (App Router) y app/api/**/route.ts (Route Handlers)
-  page.tsx         kiosco (/)
+  page.tsx         kiosco (/), arma app/kiosco/
+  kiosco/          pantallas del kiosco (bienvenida, cuentas, «Pedí lo de siempre», menú, pago, estado)
   personal/        entrada única del personal
   cocina/          tablero de cocina
-  admin/           administración (mínima en tarea 1)
+  admin/           layout.tsx (barra, pestañas, rol admin), page.tsx (→ /admin/catalogo),
+                   catalogo/ (categorías y productos), usuarios/ (usuarios y roles)
+  api/admin/       users, catalog, categories, products (sesión del personal)
   globals.css      variables de diseño --vc-* y clases vc-*
 components/        ui.tsx (componentes compartidos), icons.tsx (íconos propios por IconKey)
 lib/contracts.ts   tipos, errores, límites y rutas HTTP (contrato compartido)
 lib/db.ts          esquema SQLite, semilla idempotente, getDb()
-lib/services/      servicios de dominio: auth.ts, catalog.ts, orders.ts
+lib/services/      servicios de dominio: auth.ts, catalog.ts, orders.ts (incluye getLastOrder),
+                   users.ts y catalog-admin.ts (administración)
 tests/             pruebas Vitest de los servicios y de la capa HTTP (http.test.ts)
 scripts/seed.mjs   npm run seed
 data/              base SQLite (no versionada)
+docs/              TECNICO.md (diseño, contratos, seguridad), VALIDACION.md (aceptación y pruebas)
 ```
 
 ## Convenciones
@@ -51,6 +57,11 @@ data/              base SQLite (no versionada)
 - **Interfaz**: en español rioplatense («Pedí», «Tocá»). Usar los componentes de
   `components/ui.tsx` y las variables de `app/globals.css`; no inventar colores ni tamaños.
   Íconos de productos en `components/icons.tsx` (`ProductIcon`).
+- **Administración**: servicios con `requireRole(actor, "admin")`, cuerpos recibidos como `unknown`
+  y validados con `ADMIN_LIMITS`; baja lógica de usuarios y sin borrado de productos (ver
+  docs/TECNICO.md, «Decisiones de la tarea 2»).
+- **Semilla**: idempotente por clave natural (email, slug); los pedidos de ejemplo se cargan solo
+  para clientes sin pedidos. Nunca pisar datos existentes.
 - Código de base de datos solo en el servidor (`better-sqlite3` es nativo).
 - Pruebas con base `:memory:` (`openDb(":memory:")` + `setDbForTests`).
 
@@ -67,7 +78,7 @@ data/              base SQLite (no versionada)
   `NEXT_DIST_DIR`: no commitear esas líneas (dejar solo `.next/types` y `.next/dev/types`).
   Borrar la carpeta `.next-<x>` al terminar.
 - Sesiones: una cookie por pantalla (`vc_session` kiosco, `vc_staff_session` personal; ver
-  `lib/contracts.ts`). Toda ruta nueva del personal (p. ej. administración en la tarea 2) usa
+  `lib/contracts.ts`). Toda ruta del personal (`/api/kitchen/**`, `/api/admin/**`) usa
   `handle(fn, "staff")`; las del kiosco, `handle(fn)`. Las cookies no distinguen puerto: dos agentes
   probando en el mismo navegador usan hosts distintos (`<agente>.localhost`) para no pisarse.
 - Quien construye una parte no la revisa ni la verifica: lo hace otro agente.
@@ -77,5 +88,7 @@ data/              base SQLite (no versionada)
 1. `npm run typecheck` sin errores.
 2. `npm test` en verde (sin debilitar pruebas para que pasen).
 3. Recorrido en la app con dos ventanas (kiosco y cocina; ver README), incluyendo algo que no
-   debería poder hacerse (p. ej. entrar a `/cocina` como cliente).
-4. Documentación afectada actualizada.
+   debería poder hacerse (p. ej. entrar a `/cocina` como cliente o a `/admin` como cocina).
+4. Si se tocó administración o catálogo: recorrido de admin (cambiar precio/disponibilidad y verlo
+   en el kiosco; dar de baja un usuario y comprobar que no entra).
+5. Documentación afectada actualizada (incluye resultados en docs/VALIDACION.md si cambian).

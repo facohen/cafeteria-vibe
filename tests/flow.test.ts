@@ -11,7 +11,13 @@ describe("recorrido principal", () => {
     expect(cliente.role).toBe("cliente");
 
     const catalog = getCatalog(cliente);
-    expect(catalog.categories.map((c) => c.slug)).toEqual(["cafes", "frias", "pasteleria"]);
+    // la semilla completa (tarea 2) agrega categorías: se mantienen las de la tarea 1, ordenadas por sort
+    const slugs = catalog.categories.map((c) => c.slug);
+    expect(slugs).toEqual(expect.arrayContaining(["cafes", "frias", "pasteleria"]));
+    expect(slugs.indexOf("cafes")).toBeLessThan(slugs.indexOf("frias"));
+    expect(slugs.indexOf("frias")).toBeLessThan(slugs.indexOf("pasteleria"));
+    const sorts = catalog.categories.map((c) => c.sort);
+    expect(sorts).toEqual([...sorts].sort((a, b) => a - b));
     const latte = catalog.products.find((p) => p.slug === "latte")!;
     expect(latte.price).toBe(3400);
     expect(latte.available).toBe(true);

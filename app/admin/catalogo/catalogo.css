@@ -1,0 +1,112 @@
+/* Administración del catálogo. Prefijo ac-. Solo variables de app/globals.css y clases ad-* / vc-*. */
+.ac-sub { margin: 4px 0 0; }
+
+/* Avisos */
+.ac-msg {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 18px; border-radius: var(--vc-radius-sm); background: var(--vc-green-soft);
+  border: 2px solid var(--vc-green);
+}
+.ac-msg--error { background: var(--vc-bg); border-color: var(--vc-danger); }
+.ac-msg__close {
+  background: none; border: 0; font-size: 1.6rem; line-height: 1; cursor: pointer; color: var(--vc-muted);
+  min-width: 44px; min-height: 44px; font-family: inherit;
+}
+
+/* Diseño en dos columnas */
+.ac-layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; align-items: start; }
+@media (max-width: 860px) { .ac-layout { grid-template-columns: 1fr; } }
+
+/* Categorías */
+.ac-cats {
+  background: var(--vc-surface); border-radius: var(--vc-radius); padding: 18px; display: flex;
+  flex-direction: column; gap: 12px; position: sticky; top: 16px;
+}
+.ac-cats h2, .ac-products__head h2 { margin: 0; font-size: 1.3rem; font-weight: 900; }
+.ac-cats__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ac-cat { background: var(--vc-bg); border: 2px solid var(--vc-line); border-radius: var(--vc-radius-sm); overflow: hidden; }
+.ac-cat--on { border-color: var(--vc-green-strong); }
+.ac-cat__pick {
+  width: 100%; min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 0 16px; background: none; border: 0; cursor: pointer; font-family: inherit; font-size: 1.1rem;
+  font-weight: 800; color: var(--vc-ink); text-align: left;
+}
+.ac-cat--on .ac-cat__pick { background: var(--vc-green-soft); color: var(--vc-green-strong); }
+.ac-cat__count {
+  min-width: 32px; height: 28px; border-radius: 999px; background: var(--vc-surface); color: var(--vc-muted);
+  display: inline-grid; place-items: center; font-size: .9rem; padding: 0 8px;
+}
+.ac-cat__tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
+.ac-cat__rename { display: flex; flex-direction: column; gap: 0; padding-top: 12px; }
+.ac-cat__rename input, .ac-cats__add input {
+  min-height: 48px; padding: 0 14px; border-radius: var(--vc-radius-sm); border: 2px solid var(--vc-line);
+  font-family: inherit; font-size: 1.05rem; color: var(--vc-ink); background: var(--vc-bg); box-sizing: border-box;
+}
+.ac-cat__rename input { margin: 0 12px; }
+.ac-cat__rename input:focus, .ac-cats__add input:focus { outline: none; border-color: var(--vc-green-strong); }
+.ac-cats__add { display: flex; gap: 8px; }
+.ac-cats__add input { flex: 1; min-width: 0; }
+.ac-confirm { border-top: 1px solid var(--vc-line); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.ac-confirm p { margin: 0; font-weight: 700; }
+.ac-confirm .ac-cat__tools { padding: 0; }
+
+.ac-iconbtn {
+  min-width: 44px; min-height: 44px; border-radius: 999px; border: 2px solid var(--vc-line); background: var(--vc-bg);
+  font-size: 1.3rem; font-weight: 900; cursor: pointer; color: var(--vc-ink); font-family: inherit;
+}
+.ac-iconbtn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Productos */
+.ac-products { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ac-products__head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.ac-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.ac-empty {
+  border: 2px dashed var(--vc-line); border-radius: var(--vc-radius); padding: 32px; text-align: center;
+  color: var(--vc-muted); font-weight: 700; display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.ac-empty p { margin: 0; }
+
+.ac-card {
+  background: var(--vc-bg); border: 1px solid var(--vc-line); border-radius: var(--vc-radius);
+  box-shadow: var(--vc-shadow); padding: 18px; display: flex; flex-direction: column; gap: 14px;
+  justify-content: space-between;
+}
+.ac-card--off { background: var(--vc-surface); box-shadow: none; }
+.ac-card--off .ac-card__icon, .ac-card--off .ac-card__info { opacity: .55; }
+.ac-card__top { display: flex; gap: 14px; align-items: flex-start; }
+.ac-card__icon { flex: none; }
+.ac-card__info { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ac-card__info h3 { margin: 0; font-size: 1.15rem; font-weight: 900; }
+.ac-card__price { font-weight: 800; font-size: 1.1rem; }
+.ac-card__desc {
+  margin: 0; font-size: .95rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ac-card__bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ac-card__bottom .ad-switch { min-height: 44px; }
+.ad-switch:disabled { opacity: .5; cursor: wait; }
+
+/* Panel de edición */
+.ac-overlay {
+  position: fixed; inset: 0; background: rgba(31, 42, 31, 0.35); display: flex; justify-content: center;
+  align-items: flex-start; padding: 32px 16px; overflow-y: auto; z-index: 50;
+}
+.ac-panel {
+  background: var(--vc-bg); border-radius: var(--vc-radius); box-shadow: var(--vc-shadow); width: 100%;
+  max-width: 720px; padding: 24px 28px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box;
+}
+.ac-panel__head { display: flex; align-items: center; gap: 14px; }
+.ac-panel__head h2 { margin: 0; flex: 1; font-size: 1.5rem; font-weight: 900; }
+.ac-panel__preview { flex: none; }
+.ac-hint { font-weight: 600; font-size: .9rem; }
+.ac-row { display: grid; grid-template-columns: 1fr 1.4fr .8fr; gap: 12px; }
+@media (max-width: 600px) { .ac-row { grid-template-columns: 1fr; } }
+
+.ac-icons { border: 0; padding: 0; margin: 0; }
+.ac-icons legend { font-weight: 800; margin-bottom: 8px; padding: 0; }
+.ac-icons__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.ac-iconopt {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px; min-height: 92px;
+  border-radius: var(--vc-radius-sm); border: 2px solid var(--vc-line); background: var(--vc-bg); cursor: pointer;
+  font-family: inherit; font-size: .85rem; font-weight: 800; color: var(--vc-ink);
+}
+.ac-iconopt--on { border-color: var(--vc-green-strong); background: var(--vc-green-soft); color: var(--vc-green-strong); }

@@ -42,11 +42,23 @@ distintos de los que construyeron cada parte, correcciones y commit.
 
 ### Tarea 2: partes en paralelo
 
-Sobre los contratos de la tarea 2 (al final de `lib/contracts.ts`), un agente por parte:
-administración de usuarios y roles · administración del catálogo · «Pedí lo de siempre» en el
-kiosco · datos de demo completos · pruebas ampliadas · documentación (incluye `docs/VALIDACION.md`).
-Luego revisión de diseño de todas las pantallas, etapa 5 completa en la app y verificación desde
-un estado limpio.
+El coordinador amplió primero los contratos (sección «Contratos de la tarea 2» al final de
+`lib/contracts.ts`, `ICON_KEYS` nuevos) y escribió el marco de `/admin` (`app/admin/layout.tsx`,
+`AdminNav.tsx`, `page.tsx`, `admin.css`). Con eso se lanzaron juntos:
+
+| Parte | Archivos propios |
+|---|---|
+| Administración de usuarios y roles | `lib/services/users.ts`, `app/api/admin/users/**`, `app/admin/usuarios/**` |
+| Administración del catálogo | `lib/services/catalog-admin.ts`, `app/api/admin/{catalog,categories,products}/**`, `app/admin/catalogo/**` |
+| «Pedí lo de siempre» | `getLastOrder` en `lib/services/orders.ts`, `app/api/orders/last/**`, `app/kiosco/**` |
+| Datos de demo completos | semilla en `lib/db.ts` (`SEED` y `seed`), `components/icons.tsx` (íconos nuevos) |
+| Pruebas ampliadas | `tests/**` |
+| Documentación | `README.md`, `CLAUDE.md`, `docs/TECNICO.md`, `docs/VALIDACION.md` |
+
+Después: integración, revisión de diseño de todas las pantallas contra las restricciones, etapa 5
+completa en la app (cliente, cocina, administración y lo que no debe poder hacerse) por agentes
+distintos de los constructores, verificación desde un estado limpio y commit. Resultados en
+[docs/VALIDACION.md](VALIDACION.md).
 
 ## Requisitos
 
@@ -159,16 +171,37 @@ Decisiones:
   se quiera sin duplicar ni pisar lo editado. La app la aplica sola al abrir la base.
 - **SQLite síncrono** (`better-sqlite3`): API simple, sin pool; suficiente para una demo local.
 
+Decisiones de la tarea 2:
+
+- **Baja lógica de usuarios, sin borrado físico** (`active = 0` + borrar sus sesiones): los pedidos
+  referencian al usuario y deben conservarse; la baja es reversible (reactivar con `active = true`).
+- **Productos sin borrado**: se marcan no disponibles. `order_items` referencia el producto y
+  guarda copia de nombre, precio e ícono, así que el historial no cambia. Las categorías sí se
+  borran, pero solo vacías (si tienen productos → `INVALID_TRANSITION`), para no dejar productos huérfanos.
+- **Slug automático** a partir del nombre (único, con sufijo `-2`, `-3`…) y fijo después: admin no
+  tiene que inventar claves y la semilla, que identifica por slug, sigue siendo idempotente aunque
+  se renombre un producto.
+- **Pedidos anteriores de la semilla solo si el cliente no tiene pedidos**: los pedidos no tienen
+  clave natural; ese criterio evita duplicarlos al repetir la semilla y no toca pedidos reales.
+- **«Pedí lo de siempre» reutiliza `POST /api/orders`**: el kiosco manda los `productId` y
+  cantidades del último pedido; precios, total y disponibilidad salen de la base como en cualquier
+  pedido. No hay un camino de creación aparte que validar.
+- **El kiosco recarga el catálogo al entrar cada cliente** (`GET /api/catalog`, sin caché): los
+  cambios de admin se ven en el siguiente cliente sin tiempo real ni invalidaciones; si un producto
+  se vuelve no disponible con el menú abierto, el servidor igual rechaza el pedido.
+- **Personal nuevo sin contraseña recibe la de demo** (`cafe1234`): coherente con la entrada
+  precargada; admin puede fijar otra (mínimo 8 caracteres).
+
 ## Modelo de datos
 
 Esquema completo en [lib/db.ts](../lib/db.ts) (`SCHEMA`). Fechas en texto ISO UTC; booleanos como 0/1.
 
 | Tabla | Campos principales | Notas |
 |---|---|---|
-| `users` | `email` único (sin distinguir mayúsculas), `name`, `role` ∈ cliente/cocina/admin, `password_hash`, `active` | `password_hash` solo para personal; baja = `active = 0` |
+| `users` | `email` único (sin distinguir mayúsculas, guardado en minúsculas), `name`, `role` ∈ cliente/cocina/admin, `password_hash`, `active` | `password_hash` solo para personal; baja lógica = `active = 0` (nunca se borran) |
 | `sessions` | `token` (PK), `user_id` | se borran con el usuario (`ON DELETE CASCADE`) |
 | `categories` | `slug` único, `name`, `sort` | |
-| `products` | `slug` único, `category_id`, `name`, `description`, `price` entero > 0, `icon`, `available`, `sort` | `icon` ∈ `ICON_KEYS` |
+| `products` | `slug` único, `category_id`, `name`, `description`, `price` entero > 0, `icon`, `available`, `sort` | `icon` ∈ `ICON_KEYS`; no se borran (se marcan no disponibles) |
 | `orders` | `user_id`, `status`, `total`, `created_at`, `paid_at`, `ready_at`, `finished_at` | índices por usuario/fecha y por estado |
 | `order_items` | `order_id`, `product_id`, `name`, `unit_price`, `quantity` 1–20, `icon` | copia histórica del producto |
 
@@ -207,6 +240,29 @@ Validación de `createOrder` (`VALIDATION`): `items` es array de 1 a `LIMITS.max
 `productId` repetido se suma y la suma también debe ser ≤ 20. Cualquier campo extra (p. ej. `price`)
 se ignora: el importe siempre sale de `products.price`.
 
+### Servicios de la tarea 2
+
+Mismas convenciones. En administración todo exige rol `admin`; orden de chequeo: sesión → rol →
+validación del id → existencia (`NOT_FOUND`) → validación del cuerpo. Los cuerpos llegan como
+`unknown`, los textos se recortan (trim) antes de validar y los campos extra se ignoran. Límites en
+`ADMIN_LIMITS` (nombre de usuario 1–60, email ≤ 120 con formato `algo@algo.algo`, contraseña 8–200,
+nombre de categoría 1–40, de producto 1–60, descripción ≤ 200, precio entero 1–1.000.000, `sort`
+entero 0–10.000).
+
+| Función | Archivo | Quién | Efecto / reglas |
+|---|---|---|---|
+| `getLastOrder(actor): Order \| null` | orders.ts | cliente | pedido más reciente **propio** en `pagado`/`listo`/`entregado` (nunca `pendiente_pago`, `cancelado` ni ajeno) |
+| `listUsers(actor): User[]` | users.ts | admin | todos (activos e inactivos), por rol y nombre |
+| `createUser(actor, input): User` | users.ts | admin | `UserInput`; email en minúsculas, único sin distinguir mayúsculas; rol ∈ `ROLES`; personal sin contraseña → la de demo; contraseña ignorada para clientes |
+| `updateUser(actor, id, patch): User` | users.ts | admin | `UserPatch` (solo campos presentes), mismas reglas; cambiar rol o `active=false` borra sus sesiones; `active=true` reactiva; admin no puede quitarse el rol ni darse de baja (`VALIDATION`) |
+| `deactivateUser(actor, id): User` | users.ts | admin | baja lógica (`active=false` + borra sesiones); sobre sí mismo → `VALIDATION`; idempotente |
+| `getAdminCatalog(actor): Catalog` | catalog-admin.ts | admin | como `getCatalog`, incluye no disponibles |
+| `createCategory(actor, input): Category` | catalog-admin.ts | admin | `CategoryInput`; slug generado (único); `sort` por defecto al final |
+| `updateCategory(actor, id, patch): Category` | catalog-admin.ts | admin | el slug no cambia |
+| `deleteCategory(actor, id): void` | catalog-admin.ts | admin | solo vacía; con productos → `INVALID_TRANSITION` |
+| `createProduct(actor, input): Product` | catalog-admin.ts | admin | `ProductInput`; slug generado; `VALIDATION` si categoría inexistente, nombre/descripción, precio no entero o fuera de rango, ícono fuera de `ICON_KEYS`, `available` no booleano o `sort` inválido |
+| `updateProduct(actor, id, patch): Product` | catalog-admin.ts | admin | mismas reglas; el slug no cambia. No hay borrado de productos |
+
 ### HTTP
 
 Rutas en `app/api/**/route.ts` (ver lista en `lib/contracts.ts`). Cada handler: lee la cookie de
@@ -215,8 +271,8 @@ con `{ error: { code, message } }`; cualquier otro error → 500 `INTERNAL` sin 
 El `:id` de la URL se pasa crudo al servicio, que lo valida después de sesión y rol (así `/api/orders/abc`
 sin sesión da 401, no 404).
 **Una cookie por pantalla**: `vc_session` (kiosco: `/api/auth/google`, `/api/me`, `/api/catalog`,
-`/api/orders/**`) y `vc_staff_session` (personal: `/api/auth/staff`, `/api/kitchen/**` y las páginas
-`/cocina` y `/admin`; en la tarea 2 también la administración). Se elige con `handle(fn, "staff")` y
+`/api/orders/**`, incluida `/api/orders/last`) y `vc_staff_session` (personal: `/api/auth/staff`,
+`/api/kitchen/**`, `/api/admin/**` y las páginas `/cocina` y `/admin/**`). Se elige con `handle(fn, "staff")` y
 `getCurrentUser("staff")` (por defecto en Server Components). `POST /api/auth/logout` cierra la del
 kiosco y `?scope=staff` la del personal. Así kiosco y cocina conviven en el mismo navegador: entrar como
 personal no pisa ni revoca la sesión del cliente. Cookie: `httpOnly`, `sameSite=lax`, `path=/`, `maxAge` 12 h, `Secure` solo con `VIBE_COOKIE_SECURE=1`
@@ -225,17 +281,39 @@ método distinto de GET cuyo `Origin` no coincida con `Host` (cubre otros puerto
 Token: 32 bytes aleatorios (hex). Las sesiones vencen a las 12 h (`SESSION_TTL_HOURS`) y un login
 nuevo revoca la sesión previa del mismo navegador.
 
+Rutas de la tarea 2 (JSON; errores como arriba):
+
+| Método y ruta | Cookie | Cuerpo | Respuesta |
+|---|---|---|---|
+| `GET /api/orders/last` | `vc_session` (cliente) | — | `{ order: Order \| null }` |
+| `GET /api/admin/users` | `vc_staff_session` (admin) | — | `{ users: User[] }` |
+| `POST /api/admin/users` | ídem | `UserInput` | `{ user: User }` |
+| `PATCH /api/admin/users/:id` | ídem | `UserPatch` | `{ user: User }` |
+| `DELETE /api/admin/users/:id` | ídem | — | `{ user: User }` (baja lógica) |
+| `GET /api/admin/catalog` | ídem | — | `Catalog` |
+| `POST /api/admin/categories` | ídem | `CategoryInput` | `{ category: Category }` |
+| `PATCH /api/admin/categories/:id` | ídem | `CategoryPatch` | `{ category: Category }` |
+| `DELETE /api/admin/categories/:id` | ídem | — | `{ ok: true }` |
+| `POST /api/admin/products` | ídem | `ProductInput` | `{ product: Product }` |
+| `PATCH /api/admin/products/:id` | ídem | `ProductPatch` | `{ product: Product }` |
+
+En `/api/admin/**`: sin sesión del personal → 401; cliente o cocina → 403.
+
 ### Páginas
 
 | Ruta | Rol | Contenido |
 |---|---|---|
-| `/` | público → cliente | kiosco: bienvenida + Google simulado → menú por categorías + carrito → QR → estado/aviso → terminar |
+| `/` | público → cliente | kiosco (`app/kiosco/**`): bienvenida + Google simulado → «Pedí lo de siempre» (si hay pedido anterior) o menú por categorías + carrito → QR → estado/aviso → terminar |
 | `/personal` | público | entrada única del personal, precargada con la cuenta de cocina; un toque cambia a admin |
-| `/cocina` | cocina | tablero de pedidos pagados en tiempo real (polling 2 s), botón «Listo» |
-| `/admin` | admin | pantalla mínima: «la gestión se construye en la tarea 2» |
+| `/cocina` | cocina | tablero de pedidos pagados en tiempo real (polling 2 s), botón «Marcar listo» |
+| `/admin` | admin | redirige a `/admin/catalogo` |
+| `/admin/catalogo` | admin | categorías y productos (precio, ícono, orden, disponibilidad) |
+| `/admin/usuarios` | admin | usuarios y roles (alta, edición, baja/reactivación) |
 
 Las páginas protegidas verifican sesión y rol en el servidor (Server Component) y redirigen a
-`/personal` si no corresponde. La API vuelve a verificar todo: la página no es el control.
+`/personal` si no corresponde. `app/admin/layout.tsx` pone la barra y las pestañas y verifica el
+rol, y cada página hija lo vuelve a verificar (los layouts no se re-ejecutan en cada navegación).
+La API vuelve a verificar todo: la página no es el control.
 
 ### Diseño
 
@@ -271,17 +349,23 @@ Las páginas protegidas verifican sesión y rol en el servidor (Server Component
   es 500 genérico, sin detalles internos (se registra solo en la consola del servidor).
 - **Mínimo acceso**: cada rol accede solo a sus rutas (cliente: catálogo y sus pedidos; cocina:
   tablero; admin: gestión); `/api/auth/demo-accounts` expone solo email, nombre y rol de cuentas activas, más la contraseña de demo.
+- **Administración solo con la sesión del personal**: `/api/admin/**` usa `handle(fn, "staff")` y
+  lee solo `vc_staff_session`; una sesión de kiosco nunca da acceso a la gestión, y cada servicio
+  exige rol `admin` (401 sin sesión, 403 cliente o cocina).
+- **Validación en el servidor** de todo alta y edición (tipos, formato de email, unicidad, rol ∈
+  `ROLES`, ícono ∈ `ICON_KEYS`, enteros y rangos de `ADMIN_LIMITS`); la interfaz de admin no es el control.
+- **Baja y cambio de rol efectivos al instante**: dar de baja o cambiar el rol borra las sesiones
+  del usuario, así una sesión abierta no conserva permisos viejos; `getSessionUser` además ignora
+  usuarios inactivos y los logins los rechazan.
+- **`password_hash` nunca expuesto**: los servicios de usuarios devuelven `User` (sin hash) y la
+  contraseña recibida solo se guarda hasheada con scrypt.
+- **Admin no se auto-bloquea**: un admin no puede quitarse el rol `admin` ni darse de baja
+  (`VALIDATION`), así siempre queda al menos quien está administrando.
 
-## Pendiente para la tarea 2
+## Pendientes
 
-- Administración de usuarios y roles (alta, edición, baja, asignación de rol) reemplazando la
-  `/admin` mínima, según los contratos al final de `lib/contracts.ts`.
-- Administración del catálogo: categorías, productos, precios, íconos y disponibilidad.
-- «Pedí lo de siempre»: `getLastOrder` y `GET /api/orders/last`, y el botón en el kiosco.
-- Datos de demo completos: catálogo completo con íconos propios (ampliar `ICON_KEYS` si hace falta
-  es cambio de contrato), varios clientes y pedidos anteriores. Los pedidos no tienen clave natural:
-  la semilla debe marcarlos de forma idempotente (p. ej. solo si el cliente no tiene pedidos).
-- Pruebas ampliadas (CA-15 a CA-21), revisión de diseño de todas las pantallas, `docs/VALIDACION.md`
-  y verificación desde un estado limpio.
-- Pendiente abierto: un pedido `listo` que el cliente no termina queda así; cocina no tiene acción
-  para entregarlo (evaluar si hace falta para la demo).
+- Un pedido `listo` que el cliente no termina queda así; cocina no tiene acción para entregarlo
+  (la sesión del kiosco vence sola a las 12 h).
+- Los cambios de catálogo no llegan a un menú ya abierto: se ven al entrar el siguiente cliente
+  (el servidor igual rechaza productos no disponibles).
+- Resultados de la verificación y otros pendientes de la entrega: [docs/VALIDACION.md](VALIDACION.md).

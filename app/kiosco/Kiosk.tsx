@@ -49,6 +49,8 @@ export default function Kiosk() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loggingIn, setLoggingIn] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
+  const [usual, setUsual] = useState<Order | null>(null);
+  const [usualNotice, setUsualNotice] = useState<string | null>(null);
   const busyRef = useRef(false);
 
   const resetToWelcome = useCallback((msg?: string) => {
@@ -57,6 +59,8 @@ export default function Kiosk() {
     setCatalog(null);
     setCart({});
     setOrder(null);
+    setUsual(null);
+    setUsualNotice(null);
     setError(null);
     setOffline(false);
     setPickerOpen(false);
@@ -125,6 +129,17 @@ export default function Kiosk() {
     return cat;
   }, []);
 
+  /** «Pedí lo de siempre»: último pedido del cliente; si falla, simplemente no se ofrece. */
+  const loadUsual = useCallback(async () => {
+    setUsualNotice(null);
+    try {
+      const { order: o } = await api<{ order: Order | null }>("/api/orders/last");
+      setUsual(o && o.items.length > 0 ? o : null);
+    } catch {
+      setUsual(null);
+    }
+  }, []);
+
   // Al cargar: si hay sesión de cliente, directo al menú (o al pedido en curso). Personal -> bienvenida.
   useEffect(() => {
     let cancelled = false;
@@ -160,6 +175,8 @@ export default function Kiosk() {
           }
           saveOrderId(null);
         }
+        await loadUsual();
+        if (cancelled) return;
         setStep("menu");
       } catch {
         if (!cancelled) setStep("welcome");
@@ -168,7 +185,7 @@ export default function Kiosk() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadUsual]);
 
   // Polling cada 2 s mientras el pedido está en preparación.
   const orderId = order?.id;
@@ -214,6 +231,7 @@ export default function Kiosk() {
       setCart({});
       setOrder(null);
       await loadCatalog();
+      await loadUsual();
       setNotice(null);
       setPickerOpen(false);
       setStep("menu");
@@ -272,6 +290,26 @@ export default function Kiosk() {
           }
         }
         throw err;
+      }
+    });
+  }
+
+  /** Repite el último pedido: el servidor recalcula precios y disponibilidad; va directo al QR. */
+  function repeatUsual() {
+    if (!usual) return;
+    return run(async () => {
+      const items = usual.items.map((it) => ({ productId: it.productId, quantity: it.quantity }));
+      try {
+        const { order: o } = await api<{ order: Order }>("/api/orders", { json: { items } });
+        setOrder(o);
+        saveOrderId(o.id);
+        setStep("pay");
+      } catch (e) {
+        const err = e as ApiErr;
+        if (err.code !== "VALIDATION") throw err;
+        await loadCatalog().catch(() => null); // el menú muestra qué quedó sin stock
+        setUsual(null);
+        setUsualNotice("Algo de tu pedido de siempre no está disponible hoy, armalo a mano.");
       }
     });
   }
@@ -364,6 +402,9 @@ export default function Kiosk() {
           busy={busy}
           error={error}
           onDismissError={() => setError(null)}
+          usual={usual}
+          usualNotice={usualNotice}
+          onRepeat={repeatUsual}
         />
       )}
 

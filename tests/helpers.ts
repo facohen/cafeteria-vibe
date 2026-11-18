@@ -75,3 +75,23 @@ export function expectCode(fn: () => unknown, code: ErrorCode): void {
   expect(thrown, `se esperaba AppError ${code}, se lanzó: ${String(thrown)}`).toBeInstanceOf(AppError);
   expect((thrown as AppError).code).toBe(code);
 }
+
+/** Usuario por email (fila cruda de la base, incluye password_hash). */
+export function userRow(email: string): { id: number; email: string; name: string; role: string; active: number; password_hash: string | null } {
+  const row = current.prepare("SELECT * FROM users WHERE email = ?").get(email) as ReturnType<typeof userRow> | undefined;
+  if (!row) throw new Error(`usuario ${email} no existe`);
+  return row;
+}
+
+/** Cantidad de sesiones vivas de un usuario. */
+export function sessionCount(userId: number): number {
+  return (current.prepare("SELECT COUNT(*) AS n FROM sessions WHERE user_id = ?").get(userId) as { n: number }).n;
+}
+
+/** Recorre el valor y falla si aparece alguna clave password_hash / password (nunca se devuelven). */
+export function expectNoSecrets(value: unknown): void {
+  const json = JSON.stringify(value);
+  expect(json).not.toContain("password_hash");
+  expect(json).not.toContain('"password"');
+  expect(json).not.toMatch(/[0-9a-f]{32}:[0-9a-f]{64}/); // forma salt:hash de hashPassword
+}

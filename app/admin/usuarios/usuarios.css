@@ -1,0 +1,19 @@
+/* Administración de usuarios (prefijo au-). Solo variables de globals.css. */
+.au-filters { display: flex; gap: 10px; flex-wrap: wrap; }
+.au-count { margin-left: 6px; font-weight: 700; color: var(--vc-muted); }
+.au-chip--on .au-count { color: var(--vc-green-strong); }
+.au-card { padding: 24px; }
+.au-card h2 { margin: 0 0 16px; font-size: 1.35rem; font-weight: 900; }
+.au-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.au-note { margin: 0; font-size: .95rem; font-weight: 700; color: var(--vc-muted); }
+.au-tablewrap { overflow-x: auto; }
+.au-name { font-weight: 800; font-size: 1.05rem; }
+.au-me { margin-left: 8px; }
+.au-email { color: var(--vc-muted); word-break: break-all; }
+.au-rowactions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.au-edit td { background: var(--vc-green-soft); }
+.au-confirm td { background: var(--vc-surface); }
+.au-confirm__box { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.au-confirm__box p { margin: 0; font-weight: 800; }
+.au-empty { padding: 28px 12px; text-align: center; color: var(--vc-muted); font-weight: 700; }
+.au-msg { margin: 0; }

@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
-import type { Catalog, Product, User } from "@/lib/contracts";
+import type { Catalog, Order, Product, User } from "@/lib/contracts";
 import { LIMITS } from "@/lib/contracts";
 import { Brand, Button, formatPrice } from "@/components/ui";
 import { ProductIcon } from "@/components/icons";
+import { Usual } from "./Usual";
 
 export type Cart = Record<number, number>; // productId -> cantidad
 
@@ -19,6 +20,9 @@ export function Menu({
   busy,
   error,
   onDismissError,
+  usual,
+  usualNotice,
+  onRepeat,
 }: {
   user: User;
   catalog: Catalog;
@@ -30,6 +34,11 @@ export function Menu({
   busy: boolean;
   error: string | null;
   onDismissError: () => void;
+  /** Último pedido del cliente («Pedí lo de siempre»); null si no tiene. */
+  usual: Order | null;
+  /** Aviso si el pedido de siempre no se pudo repetir. */
+  usualNotice: string | null;
+  onRepeat: () => void;
 }) {
   const categories = [...catalog.categories].sort((a, b) => a.sort - b.sort);
   const [catId, setCatId] = useState<number | null>(categories[0]?.id ?? null);
@@ -59,6 +68,14 @@ export function Menu({
           </Button>
         </div>
       </header>
+
+      {usualNotice ? (
+        <p className="k-warn k-usual-off" role="alert">
+          {usualNotice}
+        </p>
+      ) : (
+        usual && <Usual order={usual} onRepeat={onRepeat} busy={busy} />
+      )}
 
       <h1 className="k-menu__title">¿Qué vas a tomar hoy?</h1>
 

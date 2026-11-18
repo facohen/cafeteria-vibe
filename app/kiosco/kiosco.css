@@ -257,3 +257,31 @@
   .k-cart__pay.vc-btn { min-width: 0; padding: 0 32px; }
   .k-line__price { min-width: 0; }
 }
+
+/* ---------- «Pedí lo de siempre» (arriba del menú) ---------- */
+.k-usual {
+  width: 100%; margin: 8px 0 4px; min-height: 120px; padding: 18px 22px; border: 3px solid var(--vc-green);
+  border-radius: var(--vc-radius); background: var(--vc-green-soft); box-shadow: var(--vc-shadow);
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap; text-align: left;
+  font: inherit; color: var(--vc-ink); cursor: pointer; transition: transform .08s;
+}
+.k-usual:active:not(:disabled) { transform: scale(0.98); }
+.k-usual:disabled { cursor: wait; opacity: .7; }
+.k-usual__icons { display: flex; align-items: center; gap: 4px; }
+.k-usual__icon { position: relative; display: inline-flex; background: #fff; border-radius: 50%; padding: 6px; }
+.k-usual__qty {
+  position: absolute; top: -4px; right: -4px; min-width: 30px; height: 30px; padding: 0 8px; border-radius: 999px;
+  background: var(--vc-ink); color: #fff; font-weight: 900; font-size: .95rem; display: grid; place-items: center;
+}
+.k-usual__more { font-weight: 900; font-size: 1.2rem; color: var(--vc-green-strong); padding: 0 6px; }
+.k-usual__text { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 4px; }
+.k-usual__kicker { font-size: clamp(1.5rem, 3.6vw, 2rem); font-weight: 900; letter-spacing: -0.02em; line-height: 1.1; }
+.k-usual__summary { font-size: 1.15rem; font-weight: 700; color: var(--vc-muted); }
+.k-usual__cta {
+  min-height: 72px; padding: 0 28px; border-radius: 999px; background: var(--vc-green);
+  display: inline-flex; align-items: center; font-weight: 900; font-size: 1.35rem; white-space: nowrap;
+}
+.k-usual-off { margin: 8px 0 4px; }
+@media (max-width: 640px) {
+  .k-usual__cta { width: 100%; justify-content: center; }
+}

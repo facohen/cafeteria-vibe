@@ -211,3 +211,15 @@ export function markReady(actor: SessionUser | null, id: unknown): Order {
   if (order.status !== "pagado") throw new AppError("INVALID_TRANSITION", "Solo un pedido pagado puede marcarse listo");
   return transition(order.id, "pagado", "listo", "ready_at");
 }
+
+/** «Pedí lo de siempre»: último pedido propio pagado, listo o entregado; null si no hay. */
+export function getLastOrder(actor: SessionUser | null): Order | null {
+  const a = requireRole(actor, "cliente");
+  const row = getDb()
+    .prepare(
+      `${ORDER_SELECT} WHERE o.user_id = ? AND o.status IN ('pagado','listo','entregado')
+       ORDER BY o.created_at DESC, o.id DESC LIMIT 1`,
+    )
+    .get(a.id) as OrderRow | undefined;
+  return row ? hydrate([row])[0] : null;
+}
