@@ -1,0 +1,68 @@
+/* Estilos del personal (entrada, cocina, administración). Prefijo st-. Usa variables de globals.css. */
+
+/* Entrada */
+.st-center { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: var(--vc-bg); }
+.st-login { width: 100%; max-width: 520px; padding: 36px; display: flex; flex-direction: column; gap: 18px; }
+.st-title { margin: 8px 0 0; font-size: 2rem; font-weight: 900; letter-spacing: -0.02em; }
+.st-lead { margin: 0; font-size: 1.1rem; }
+.st-chips { display: flex; gap: 12px; flex-wrap: wrap; }
+.st-chip {
+  min-height: 52px; padding: 0 24px; border-radius: 999px; border: 2px solid var(--vc-line);
+  background: var(--vc-bg); color: var(--vc-ink); font-size: 1.1rem; font-weight: 800; cursor: pointer;
+}
+.st-chip--on { background: var(--vc-green-soft); border-color: var(--vc-green-strong); color: var(--vc-green-strong); }
+.st-form { display: flex; flex-direction: column; gap: 16px; }
+.st-field { display: flex; flex-direction: column; gap: 6px; font-weight: 800; }
+.st-field input {
+  min-height: var(--vc-tap); padding: 0 18px; border-radius: var(--vc-radius-sm); border: 2px solid var(--vc-line);
+  font-family: inherit; font-size: 1.15rem; color: var(--vc-ink); background: var(--vc-surface);
+}
+.st-field input:focus { outline: none; border-color: var(--vc-green-strong); background: var(--vc-bg); }
+.st-form .vc-error { margin: 0; }
+.st-back { align-self: center; color: var(--vc-muted); font-weight: 800; text-decoration: none; padding: 12px; }
+.st-back:hover { color: var(--vc-ink); }
+
+/* Barra superior compartida (cocina y admin) */
+.st-page { min-height: 100dvh; background: var(--vc-bg); display: flex; flex-direction: column; }
+.st-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 18px 28px; border-bottom: 1px solid var(--vc-line); background: var(--vc-bg); position: sticky; top: 0; z-index: 5;
+}
+.st-top__right { display: flex; align-items: center; gap: 16px; }
+.st-live { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; color: var(--vc-green-strong); }
+.st-live__dot { width: 12px; height: 12px; border-radius: 50%; background: var(--vc-green); animation: st-pulse 1.6s infinite; }
+.st-live--off { color: var(--vc-danger); }
+.st-live--off .st-live__dot { background: var(--vc-danger); animation: none; }
+@keyframes st-pulse { 0% { box-shadow: 0 0 0 0 rgba(126, 217, 87, .7); } 70% { box-shadow: 0 0 0 10px rgba(126, 217, 87, 0); } 100% { box-shadow: 0 0 0 0 rgba(126, 217, 87, 0); } }
+
+/* Tablero de cocina */
+.st-board { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 28px; align-items: start; }
+@media (max-width: 860px) { .st-board { grid-template-columns: 1fr; } }
+.st-col { background: var(--vc-surface); border-radius: var(--vc-radius); padding: 18px; display: flex; flex-direction: column; gap: 16px; min-height: 60vh; }
+.st-col__head { display: flex; align-items: center; justify-content: space-between; }
+.st-col__head h2 { margin: 0; font-size: 1.5rem; font-weight: 900; }
+.st-count { min-width: 40px; height: 40px; padding: 0 12px; border-radius: 999px; display: grid; place-items: center; font-weight: 900; background: var(--vc-bg); border: 1px solid var(--vc-line); }
+.st-col--ready .st-count { background: var(--vc-green-soft); color: var(--vc-green-strong); border-color: transparent; }
+.st-empty { margin: 24px 0; text-align: center; color: var(--vc-muted); font-weight: 700; }
+
+.st-order { display: flex; flex-direction: column; gap: 14px; transition: box-shadow .3s, border-color .3s; }
+.st-order--new { border: 3px solid var(--vc-green); animation: st-flash 1s ease-in-out 3; }
+@keyframes st-flash { 0%, 100% { background: var(--vc-bg); } 50% { background: var(--vc-green-soft); } }
+.st-order--ready { opacity: .85; }
+.st-order__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.st-order__num { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.02em; }
+.st-order__time { color: var(--vc-muted); font-weight: 800; }
+.st-order__who { font-size: 1.15rem; font-weight: 800; margin: -6px 0 0; }
+.st-new-tag { display: inline-block; margin-left: 10px; padding: 2px 10px; border-radius: 999px; background: var(--vc-green); color: var(--vc-ink); font-size: .85rem; font-weight: 900; vertical-align: middle; }
+.st-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.st-item { display: flex; align-items: center; gap: 12px; font-size: 1.15rem; font-weight: 700; }
+.st-item__icon { width: 40px; height: 40px; border-radius: 10px; background: var(--vc-green-soft); display: grid; place-items: center; flex: none; }
+.st-item__qty { min-width: 44px; font-weight: 900; color: var(--vc-green-strong); }
+.st-banner { margin: 0 28px; margin-top: 16px; padding: 14px 20px; border-radius: var(--vc-radius-sm); background: var(--vc-green-soft); color: var(--vc-green-strong); font-weight: 900; font-size: 1.15rem; }
+.st-banner--error { background: #fdecec; color: var(--vc-danger); }
+
+/* Administración mínima */
+.st-admin { flex: 1; display: grid; place-items: center; padding: 24px; }
+.st-admin__card { max-width: 640px; width: 100%; padding: 40px; display: flex; flex-direction: column; gap: 16px; }
+.st-admin__card h1 { margin: 0; font-size: 2rem; font-weight: 900; }
+.st-admin__notice { margin: 0; padding: 18px 20px; border-radius: var(--vc-radius-sm); background: var(--vc-green-soft); font-size: 1.15rem; font-weight: 700; }

@@ -1,0 +1,61 @@
+/* VARIABLES DE DISEÑO COMPARTIDAS — Vibe Coffee. Contrato: docs/TECNICO.md §Diseño.
+   Estilo kiosco de autopedido: mucho blanco, verde claro de marca, botones grandes táctiles. */
+:root {
+  --vc-green: #7ed957;        /* verde claro de marca */
+  --vc-green-strong: #3fa34d; /* texto/borde sobre blanco, foco */
+  --vc-green-soft: #eefbe8;   /* fondos suaves, seleccionado */
+  --vc-ink: #1f2a1f;          /* texto principal */
+  --vc-muted: #6b776b;        /* texto secundario */
+  --vc-bg: #ffffff;
+  --vc-surface: #f7f8f6;      /* tarjetas sobre blanco */
+  --vc-line: #e4e8e2;
+  --vc-danger: #d64545;
+  --vc-warn: #f2b632;
+  --vc-radius: 20px;
+  --vc-radius-sm: 12px;
+  --vc-shadow: 0 6px 20px rgba(31, 42, 31, 0.08);
+  --vc-tap: 64px;             /* alto mínimo de toque en kiosco */
+  --vc-font: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --vc-kiosk-width: 820px;    /* kiosco vertical: columna centrada */
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--vc-bg); color: var(--vc-ink); font-family: var(--vc-font); }
+body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; }
+:focus-visible { outline: 3px solid var(--vc-green-strong); outline-offset: 2px; }
+
+/* Botones */
+.vc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: var(--vc-tap); padding: 0 28px; border-radius: 999px; border: 2px solid transparent;
+  font-size: 1.25rem; font-weight: 800; cursor: pointer; transition: transform .08s, background .15s;
+  text-decoration: none; user-select: none;
+}
+.vc-btn:active { transform: scale(0.97); }
+.vc-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.vc-btn--primary { background: var(--vc-green); color: var(--vc-ink); }
+.vc-btn--primary:hover:not(:disabled) { background: #6fcf47; }
+.vc-btn--secondary { background: var(--vc-bg); color: var(--vc-ink); border-color: var(--vc-line); }
+.vc-btn--danger { background: var(--vc-bg); color: var(--vc-danger); border-color: var(--vc-danger); }
+.vc-btn--ghost { background: transparent; color: var(--vc-muted); }
+.vc-btn--block { width: 100%; }
+.vc-btn--sm { min-height: 44px; padding: 0 18px; font-size: 1rem; }
+
+/* Tarjeta */
+.vc-card { background: var(--vc-bg); border: 1px solid var(--vc-line); border-radius: var(--vc-radius); box-shadow: var(--vc-shadow); padding: 20px; }
+
+/* Marca */
+.vc-brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 900; font-size: 1.5rem; letter-spacing: -0.02em; }
+.vc-brand__dot { width: 36px; height: 36px; border-radius: 50%; background: var(--vc-green); display: grid; place-items: center; }
+
+/* Etiqueta de estado */
+.vc-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-weight: 800; font-size: .9rem; background: var(--vc-surface); color: var(--vc-muted); }
+.vc-badge--green { background: var(--vc-green-soft); color: var(--vc-green-strong); }
+.vc-badge--warn { background: #fff4d6; color: #8a6200; }
+
+/* Contenedor de kiosco vertical */
+.vc-kiosk { max-width: var(--vc-kiosk-width); margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+
+.vc-error { color: var(--vc-danger); font-weight: 700; }
+.vc-muted { color: var(--vc-muted); }

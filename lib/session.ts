@@ -1,0 +1,82 @@
+// Sesión HTTP (solo servidor): cookie → usuario, y helper para Route Handlers.
+import { cookies } from "next/headers";
+import { NextResponse, type NextRequest } from "next/server";
+import { AppError, ERROR_STATUS, SESSION_COOKIE, type ApiError, type SessionUser } from "@/lib/contracts";
+import { getSessionUser, SESSION_TTL_HOURS } from "@/lib/services/auth";
+
+/** Usuario de la sesión actual (Server Components y Route Handlers). */
+export async function getCurrentUser(): Promise<SessionUser | null> {
+  const store = await cookies();
+  return getSessionUser(store.get(SESSION_COOKIE)?.value ?? null);
+}
+
+/** Token de sesión de la cookie del request. */
+export function getSessionToken(req: NextRequest): string | null {
+  return req.cookies.get(SESSION_COOKIE)?.value ?? null;
+}
+
+const cookieBase = () => ({
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: "/",
+  secure: process.env.NODE_ENV === "production",
+  maxAge: SESSION_TTL_HOURS * 3600,
+});
+
+export function setSessionCookie(res: NextResponse, token: string): NextResponse {
+  res.cookies.set(SESSION_COOKIE, token, cookieBase());
+  return res;
+}
+
+export function clearSessionCookie(res: NextResponse): NextResponse {
+  res.cookies.set(SESSION_COOKIE, "", { ...cookieBase(), maxAge: 0 });
+  return res;
+}
+
+/** Lee el cuerpo JSON; si no es JSON válido → VALIDATION. */
+export async function readJson(req: NextRequest): Promise<unknown> {
+  try {
+    return await req.json();
+  } catch {
+    throw new AppError("VALIDATION", "El cuerpo debe ser JSON válido");
+  }
+}
+
+export function errorResponse(err: unknown): NextResponse<ApiError> {
+  if (err instanceof AppError) {
+    return NextResponse.json({ error: { code: err.code, message: err.message } }, { status: ERROR_STATUS[err.code] });
+  }
+  console.error("[api] error inesperado:", err);
+  return NextResponse.json(
+    { error: { code: "INTERNAL", message: "Error interno del servidor" } } satisfies ApiError,
+    { status: 500 },
+  );
+}
+
+type Params = Record<string, string | string[] | undefined>;
+type Handler<P extends Params> = (
+  actor: SessionUser | null,
+  req: NextRequest,
+  params: P,
+) => unknown | Promise<unknown>;
+
+/**
+ * Envuelve un Route Handler: resuelve el actor desde la cookie, espera `params` (Promise en Next 16),
+ * serializa el resultado como JSON (o lo devuelve tal cual si ya es un Response) y traduce errores.
+ */
+export function handle<P extends Params = Record<string, never>>(fn: Handler<P>) {
+  return async (req: NextRequest, ctx: { params: Promise<P> }): Promise<Response> => {
+    try {
+      const actor = getSessionUser(getSessionToken(req));
+      const params = ((await ctx?.params) ?? {}) as P;
+      const result = await fn(actor, req, params);
+      if (result instanceof Response) {
+        result.headers.set("cache-control", "no-store");
+        return result;
+      }
+      return NextResponse.json(result ?? { ok: true }, { headers: { "cache-control": "no-store" } });
+    } catch (err) {
+      return errorResponse(err);
+    }
+  };
+}
