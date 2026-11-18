@@ -34,8 +34,51 @@ export const ICON_KEYS = [
   "tostado",
   "budin",
   "generico",
+  // Tarea 2 (catálogo completo). components/icons.tsx dibuja cada una.
+  "americano",
+  "flat_white",
+  "mocha",
+  "submarino",
+  "cafe_helado",
+  "chai",
+  "limonada",
+  "licuado",
+  "agua",
+  "alfajor",
+  "cookie",
+  "torta",
+  "tostadas",
+  "yogur",
 ] as const;
 export type IconKey = (typeof ICON_KEYS)[number];
+
+/** Nombre legible de cada ícono (selector de íconos en administración). */
+export const ICON_LABEL: Record<IconKey, string> = {
+  espresso: "Espresso",
+  cortado: "Cortado",
+  latte: "Latte",
+  cappuccino: "Cappuccino",
+  te: "Té",
+  jugo: "Jugo",
+  medialuna: "Medialuna",
+  tostado: "Tostado",
+  budin: "Budín",
+  generico: "Genérico",
+  americano: "Americano",
+  flat_white: "Flat white",
+  mocha: "Mocha",
+  submarino: "Submarino",
+  cafe_helado: "Café helado",
+  chai: "Chai",
+  limonada: "Limonada",
+  licuado: "Licuado",
+  agua: "Agua",
+  alfajor: "Alfajor",
+  cookie: "Cookie",
+  torta: "Torta",
+  tostadas: "Tostadas",
+  yogur: "Yogur",
+};
 
 export interface Product {
   id: number;
@@ -169,20 +212,133 @@ export type SessionScope = "kiosk" | "staff";
  * Tiempo real: polling cada 2 s de GET /api/orders/:id (kiosco) y GET /api/kitchen/orders (cocina).
  */
 
-// ---- Contratos para la tarea 2 (documentados, no implementados en la tarea 1) ----
+// ============================================================================================
+// ---- Contratos de la tarea 2 ----
+// ============================================================================================
+
 /**
- * «Pedí lo de siempre»: lib/services/orders.ts exportará
+ * «Pedí lo de siempre» — lib/services/orders.ts:
  *   getLastOrder(actor: SessionUser | null): Order | null
- * - solo rol cliente; devuelve el pedido más reciente DEL PROPIO actor con estado
- *   pagado | listo | entregado (nunca pendiente_pago ni cancelado);
- * - el kiosco lo repite llamando a createOrder con sus items (productId, quantity):
- *   los precios se recalculan con los actuales y si algún producto ya no está
- *   disponible createOrder falla con VALIDATION (el kiosco ofrece armar el pedido).
- * - Ruta: GET /api/orders/last -> { order: Order | null }.
+ * - solo rol cliente (si no, UNAUTHENTICATED / FORBIDDEN);
+ * - devuelve el pedido más reciente (created_at, luego id) DEL PROPIO actor con estado
+ *   pagado | listo | entregado (nunca pendiente_pago ni cancelado, nunca de otro usuario);
+ * - el kiosco lo repite llamando a POST /api/orders con sus items (productId, quantity): los precios
+ *   se recalculan con los actuales; si algún producto ya no está disponible, createOrder falla con
+ *   VALIDATION y el kiosco lo avisa y deja armar el pedido a mano.
+ * - Ruta: GET /api/orders/last (kiosco, cookie vc_session) -> { order: Order | null }.
+ */
+
+/**
+ * Administración — todo exige rol admin con la sesión del PERSONAL (STAFF_SESSION_COOKIE,
+ * `handle(fn, "staff")`). Sin sesión -> UNAUTHENTICATED (401); cliente o cocina -> FORBIDDEN (403).
+ * Orden de chequeo: sesión → rol → validación de id → existencia (NOT_FOUND) → validación del cuerpo.
+ * Los cuerpos se reciben como `unknown` y se validan en el servicio; campos extra se ignoran.
+ */
+
+/** Alta de usuario. `email` se guarda en minúsculas y sin espacios. */
+export interface UserInput {
+  email: string;
+  name: string;
+  role: Role;
+  /** Por defecto true. */
+  active?: boolean;
+  /**
+   * Solo personal (cocina/admin). Opcional: si se omite al dar de alta personal (o al pasar un
+   * cliente a cocina/admin sin contraseña previa), se usa la contraseña de demo (STAFF_DEMO_PASSWORD).
+   * Se ignora para clientes. Nunca se devuelve.
+   */
+  password?: string;
+}
+/** Edición parcial: solo se cambian los campos presentes. */
+export type UserPatch = Partial<UserInput>;
+
+export interface CategoryInput {
+  name: string;
+  /** Orden en el kiosco; entero >= 0. Por defecto: al final. */
+  sort?: number;
+}
+export type CategoryPatch = Partial<CategoryInput>;
+
+export interface ProductInput {
+  categoryId: number;
+  name: string;
+  /** Por defecto "". */
+  description?: string;
+  price: number;
+  /** Por defecto "generico". */
+  icon?: IconKey;
+  /** Por defecto true. */
+  available?: boolean;
+  /** Orden dentro de la categoría; entero >= 0. Por defecto: al final. */
+  sort?: number;
+}
+export type ProductPatch = Partial<ProductInput>;
+
+export const ADMIN_LIMITS = {
+  userName: { min: 1, max: 60 },
+  email: { max: 120 }, // formato: algo@algo.algo, sin espacios
+  password: { min: 8, max: 200 },
+  categoryName: { min: 1, max: 40 },
+  productName: { min: 1, max: 60 },
+  productDescription: { max: 200 },
+  price: { min: 1, max: 1_000_000 }, // entero, pesos
+  sort: { min: 0, max: 10_000 }, // entero
+} as const;
+
+/**
+ * Servicios de administración (síncronos, `actor` primero, fallan con AppError; textos se recortan
+ * con trim antes de validar):
  *
- * Administración (rol admin; todas las demás respuestas FORBIDDEN):
- *   usuarios: alta/edición (email único, name 1-60, role ∈ ROLES, active) y baja (active=false,
- *   borra sus sesiones; un usuario inactivo no puede entrar ni usar una sesión previa);
- *   categorías: name 1-40, slug único, sort; productos: name 1-60, description 0-200,
- *   price entero 1..1_000_000, icon ∈ ICON_KEYS, categoryId existente, available.
+ * lib/services/users.ts
+ *   listUsers(actor): User[]                         todos (activos e inactivos), por rol y nombre
+ *   createUser(actor, input: unknown): User          VALIDATION: email mal formado o repetido
+ *                                                    (sin distinguir mayúsculas), nombre vacío/largo,
+ *                                                    rol fuera de ROLES, active no booleano, password
+ *                                                    fuera de ADMIN_LIMITS.password
+ *   updateUser(actor, id: unknown, patch: unknown): User
+ *                                                    mismas reglas; cambiar rol o pasar active=false
+ *                                                    borra las sesiones de ese usuario; active=true
+ *                                                    lo reactiva. Un admin no puede quitarse a sí
+ *                                                    mismo el rol admin ni darse de baja (VALIDATION).
+ *   deactivateUser(actor, id: unknown): User         baja lógica: active=false + borra sus sesiones
+ *                                                    (no puede entrar ni usar una sesión previa).
+ *                                                    Sobre sí mismo -> VALIDATION. Idempotente.
+ *   (No hay borrado físico: los pedidos referencian al usuario.)
+ *
+ * lib/services/catalog-admin.ts
+ *   getAdminCatalog(actor): Catalog                  igual que getCatalog pero para admin
+ *   createCategory(actor, input: unknown): Category  slug generado del nombre (único; -2, -3...)
+ *   updateCategory(actor, id, patch: unknown): Category   el slug no cambia
+ *   deleteCategory(actor, id): void                  solo si no tiene productos; si tiene ->
+ *                                                    INVALID_TRANSITION (409)
+ *   createProduct(actor, input: unknown): Product    slug generado del nombre (único); VALIDATION:
+ *                                                    categoryId inexistente, nombre, descripción,
+ *                                                    precio no entero o fuera de rango, icon fuera
+ *                                                    de ICON_KEYS, available no booleano, sort
+ *   updateProduct(actor, id, patch: unknown): Product     mismas reglas; el slug no cambia
+ *   (No hay borrado de productos: se marcan no disponibles. Los pedidos guardan copia histórica.)
+ *
+ * Los cambios de catálogo se ven en el kiosco al recargar el menú (GET /api/catalog no cachea).
+ */
+
+/**
+ * API de administración (Route Handlers en app/api/admin, todos con `handle(fn, "staff")`):
+ *
+ *  GET    /api/admin/users                      -> { users: User[] }
+ *  POST   /api/admin/users        UserInput     -> { user: User }
+ *  PATCH  /api/admin/users/:id    UserPatch     -> { user: User }
+ *  DELETE /api/admin/users/:id                  -> { user: User }   (baja lógica)
+ *
+ *  GET    /api/admin/catalog                    -> Catalog
+ *  POST   /api/admin/categories   CategoryInput -> { category: Category }
+ *  PATCH  /api/admin/categories/:id CategoryPatch -> { category: Category }
+ *  DELETE /api/admin/categories/:id             -> { ok: true }
+ *  POST   /api/admin/products     ProductInput  -> { product: Product }
+ *  PATCH  /api/admin/products/:id ProductPatch  -> { product: Product }
+ *
+ * Páginas (Server Components verifican rol admin con getCurrentUser("staff"); si no, redirect a /personal):
+ *  /admin            -> redirige a /admin/catalogo
+ *  /admin/catalogo   categorías y productos (precio, ícono, disponibilidad)
+ *  /admin/usuarios   usuarios y roles
+ *  app/admin/layout.tsx (coordinador) pone barra superior, pestañas y verificación de rol.
  */

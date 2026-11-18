@@ -27,7 +27,7 @@ function Steam({ xs, y = 30 }: { xs: number[]; y?: number }) {
   );
 }
 
-const ICONS: Record<IconKey, ReactNode> = {
+const ICONS: Partial<Record<IconKey, ReactNode>> = {
   // Taza chiquita con plato, café oscuro y vapor.
   espresso: (
     <>

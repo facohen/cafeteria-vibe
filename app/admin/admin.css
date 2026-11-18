@@ -1,0 +1,34 @@
+/* Base compartida de administración (coordinador). Prefijo ad-. Cada sección agrega su propio CSS
+   en su carpeta (app/admin/catalogo, app/admin/usuarios). Usa solo variables de globals.css. */
+.ad-tabs { display: flex; gap: 8px; }
+.ad-tab {
+  min-height: 48px; padding: 0 22px; border-radius: 999px; display: inline-flex; align-items: center;
+  font-weight: 800; font-size: 1.05rem; color: var(--vc-ink); text-decoration: none; border: 2px solid var(--vc-line);
+}
+.ad-tab--on { background: var(--vc-green-soft); border-color: var(--vc-green-strong); color: var(--vc-green-strong); }
+.ad-main { flex: 1; width: 100%; max-width: 1180px; margin: 0 auto; padding: 24px 28px 48px; display: flex; flex-direction: column; gap: 20px; box-sizing: border-box; }
+.ad-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ad-head h1 { margin: 0; font-size: 1.9rem; font-weight: 900; letter-spacing: -0.02em; }
+/* Formularios */
+.ad-form { display: grid; gap: 14px; }
+.ad-field { display: flex; flex-direction: column; gap: 6px; font-weight: 800; }
+.ad-field input, .ad-field select, .ad-field textarea {
+  min-height: 48px; padding: 0 14px; border-radius: var(--vc-radius-sm); border: 2px solid var(--vc-line);
+  font-family: inherit; font-size: 1.05rem; color: var(--vc-ink); background: var(--vc-surface); box-sizing: border-box;
+}
+.ad-field textarea { padding: 10px 14px; min-height: 80px; resize: vertical; }
+.ad-field input:focus, .ad-field select:focus, .ad-field textarea:focus { outline: none; border-color: var(--vc-green-strong); background: var(--vc-bg); }
+.ad-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+/* Tablas/listas */
+.ad-table { width: 100%; border-collapse: collapse; }
+.ad-table th { text-align: left; font-size: .9rem; color: var(--vc-muted); font-weight: 800; padding: 8px 12px; border-bottom: 1px solid var(--vc-line); }
+.ad-table td { padding: 12px; border-bottom: 1px solid var(--vc-line); vertical-align: middle; }
+.ad-row--off td { color: var(--vc-muted); }
+/* Interruptor de disponibilidad / activo */
+.ad-switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 800; background: none; border: 0; padding: 0; color: var(--vc-ink); font-family: inherit; font-size: 1rem; }
+.ad-switch__track { width: 52px; height: 30px; border-radius: 999px; background: var(--vc-line); position: relative; transition: background .15s; flex: none; }
+.ad-switch__track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--vc-bg); box-shadow: var(--vc-shadow); transition: left .15s; }
+.ad-switch--on .ad-switch__track { background: var(--vc-green); }
+.ad-switch--on .ad-switch__track::after { left: 25px; }
+/* Mensajes */
+.ad-ok { color: var(--vc-green-strong); font-weight: 800; }
