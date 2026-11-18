@@ -19,7 +19,8 @@ const cookieBase = () => ({
   httpOnly: true,
   sameSite: "lax" as const,
   path: "/",
-  secure: process.env.NODE_ENV === "production",
+  // Secure solo si se sirve por HTTPS (VIBE_COOKIE_SECURE=1); en la demo local se usa HTTP.
+  secure: process.env.VIBE_COOKIE_SECURE === "1",
   maxAge: SESSION_TTL_HOURS * 3600,
 });
 
@@ -67,6 +68,12 @@ type Handler<P extends Params> = (
 export function handle<P extends Params = Record<string, never>>(fn: Handler<P>) {
   return async (req: NextRequest, ctx: { params: Promise<P> }): Promise<Response> => {
     try {
+      // Anti-CSRF: un navegador siempre manda Origin en POST; si es de otro origen (incluso otro
+      // puerto del mismo host) se rechaza antes de tocar la sesión.
+      const origin = req.headers.get("origin");
+      if (req.method !== "GET" && origin && new URL(origin).host !== req.headers.get("host")) {
+        throw new AppError("FORBIDDEN", "Origen no permitido");
+      }
       const actor = getSessionUser(getSessionToken(req));
       const params = ((await ctx?.params) ?? {}) as P;
       const result = await fn(actor, req, params);

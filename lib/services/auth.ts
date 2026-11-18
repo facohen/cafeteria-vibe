@@ -38,6 +38,10 @@ export function listDemoAccounts(): DemoAccounts {
 
 function createSession(userId: number): string {
   const token = randomBytes(32).toString("hex");
+  // Limpieza: borra las sesiones ya vencidas de cualquier usuario.
+  getDb()
+    .prepare(`DELETE FROM sessions WHERE created_at <= strftime('%Y-%m-%dT%H:%M:%fZ','now','-${SESSION_TTL_HOURS} hours')`)
+    .run();
   getDb().prepare("INSERT INTO sessions (token, user_id) VALUES (?, ?)").run(token, userId);
   return token;
 }

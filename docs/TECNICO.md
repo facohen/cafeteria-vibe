@@ -34,7 +34,7 @@ Un **coordinador** escribió primero los contratos compartidos (`lib/contracts.t
 | Backend: servicios y API | `lib/services/**`, `app/api/**` |
 | Kiosco | `app/page.tsx` y componentes del kiosco, `components/icons.tsx` |
 | Personal y cocina | `app/personal/**`, `app/cocina/**`, `app/admin/**` (mínima) |
-| Pruebas | `tests/**` (Vitest sobre los servicios, base `:memory:`) |
+| Pruebas | `tests/**` (Vitest sobre los servicios con base `:memory:`, más `tests/http.test.ts` sobre los Route Handlers) |
 | Documentación | `README.md`, `CLAUDE.md`, `docs/TECNICO.md` |
 
 Después: integración por el coordinador, **revisión** y **verificación** en la app por agentes
@@ -211,8 +211,13 @@ se ignora: el importe siempre sale de `products.price`.
 
 Rutas en `app/api/**/route.ts` (ver lista en `lib/contracts.ts`). Cada handler: lee la cookie
 `vc_session` → `getSessionUser` → llama al servicio → JSON. `AppError` → status de `ERROR_STATUS`
-con `{ error: { code, message } }`; cualquier otro error → 500 sin detalles internos.
-Cookie: `httpOnly`, `sameSite=lax`, `path=/`. Token: 32 bytes aleatorios (hex).
+con `{ error: { code, message } }`; cualquier otro error → 500 `INTERNAL` sin detalles internos.
+El `:id` de la URL se pasa crudo al servicio, que lo valida después de sesión y rol (así `/api/orders/abc`
+sin sesión da 401, no 404). Cookie: `httpOnly`, `sameSite=lax`, `path=/`, `maxAge` 12 h, `Secure` solo con `VIBE_COOKIE_SECURE=1`
+(la demo corre por HTTP local, también por la IP de red). Anti-CSRF: `handle` rechaza con 403 todo
+método distinto de GET cuyo `Origin` no coincida con `Host` (cubre otros puertos del mismo host).
+Token: 32 bytes aleatorios (hex). Las sesiones vencen a las 12 h (`SESSION_TTL_HOURS`) y un login
+nuevo revoca la sesión previa del mismo navegador.
 
 ### Páginas
 
@@ -246,7 +251,14 @@ Las páginas protegidas verifican sesión y rol en el servidor (Server Component
 - **Validación de entradas**: tipos, enteros, rangos y existencia se validan en los servicios
   ([LIMITS](../lib/contracts.ts)); las consultas SQL usan parámetros, nunca concatenación.
 - **Contraseñas**: hash scrypt con sal por usuario; `password_hash` nunca sale de la capa de datos
-  (`User` no lo incluye). Cookie de sesión `httpOnly` y `sameSite=lax`, token aleatorio de 32 bytes.
+  (`User` no lo incluye). El login del personal hace el mismo trabajo de scrypt exista o no el
+  usuario y limita la contraseña a 200 caracteres. Cookie de sesión `httpOnly` y `sameSite=lax`,
+  token aleatorio de 32 bytes, vencimiento a las 12 h (las vencidas se borran al crear sesiones)
+  y revocación de la sesión previa al entrar.
+- **CSRF**: POST/PUT/DELETE desde otro origen se rechazan (chequeo de `Origin` en `handle`), además
+  de `sameSite=lax`.
+- **Kiosco compartido**: «Terminar» cierra la sesión del cliente; si alguien se va sin tocarlo,
+  la sesión vence sola a las 12 h.
 - **Sin secretos en el repo**: no hay claves ni credenciales reales. La contraseña de demo del
   personal (`cafe1234`) es un dato de demo público, expuesto a propósito para precargar `/personal`.
 - **Errores**: `AppError` devuelve código y mensaje pensados para el usuario; cualquier otro error

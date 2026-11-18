@@ -107,7 +107,7 @@ export function Menu({
                     </span>
                   </span>
                 ) : (
-                  <span className="k-product__off">Sin stock hoy</span>
+                  <span className="k-product__off">No disponible</span>
                 )}
               </button>
             );

@@ -76,7 +76,7 @@ export const SEED = {
   ],
   categories: [
     { slug: "cafes", name: "Cafés", sort: 1 },
-    { slug: "frias", name: "Frías y tés", sort: 2 },
+    { slug: "frias", name: "Tés y jugos", sort: 2 },
     { slug: "pasteleria", name: "Pastelería", sort: 3 },
   ],
   products: [

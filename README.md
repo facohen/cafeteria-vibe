@@ -10,10 +10,10 @@ Estado: **tarea 1 de 2** (recorrido principal). Diseño y contratos en
 ## Funcionalidades
 
 - Kiosco (`/`): bienvenida → elegir cuenta de Google simulado → menú por categorías con carrito →
-  QR con el importe → estado del pedido con aviso «¡Listo para retirar!» → «Terminar».
+  QR con el importe → estado del pedido con aviso «¡Tu pedido está listo!» → «Terminar».
 - Entrada del personal (`/personal`): una sola entrada, precargada con la cuenta de cocina; un
   toque cambia a la de administración. El rol decide a dónde se entra.
-- Cocina (`/cocina`): pedidos pagados en tiempo real, del más viejo al más nuevo, con botón «Listo».
+- Cocina (`/cocina`): pedidos pagados en tiempo real, del más viejo al más nuevo, con botón «Marcar listo».
 - Administración (`/admin`): pantalla mínima; la gestión llega en la tarea 2.
 - Permisos, importes y validaciones se controlan en el servidor.
 
@@ -40,6 +40,7 @@ No hace falta configurar nada. Variables opcionales:
 |---|---|---|
 | `VIBE_DB_PATH` | ruta del archivo SQLite | `data/vibe.db` |
 | `NEXT_DIST_DIR` | carpeta de build alternativa, para correr varias instancias en paralelo | `.next` |
+| `VIBE_COOKIE_SECURE` | `1` para marcar la cookie de sesión `Secure` (solo si se sirve por HTTPS) | sin marcar: la demo es HTTP local |
 
 ## Ejecución
 
@@ -52,18 +53,20 @@ npm run build && npm start   # producción local: http://localhost:3000
 
 | Rol | Cuenta | Cómo entra |
 |---|---|---|
-| Cliente | `sofia@gmail.com` (Sofía Martínez) | en `/`, «Entrar con Google» y elegir la cuenta (sin contraseña) |
+| Cliente | `sofia@gmail.com` (Sofía Martínez) | en `/`, «Tocá para pedir» → «Continuar con Google · simulado» y elegir la cuenta (sin contraseña) |
 | Cocina | `cocina@vibecoffee.local` | en `/personal`, contraseña de demo `cafe1234` (ya precargada) |
 | Administración | `admin@vibecoffee.local` | en `/personal`, contraseña de demo `cafe1234` |
 
 ## Recorrido de demo (dos ventanas)
 
 1. Ventana A: abrí http://localhost:3000/personal y entrá con la cuenta de cocina → `/cocina`.
-2. Ventana B (otra ventana o una ventana privada, para tener otra sesión): abrí http://localhost:3000.
-3. En B: «Entrar con Google» → Sofía → agregá productos de varias categorías → confirmá.
+2. Ventana B: abrí el kiosco en **otro origen**, http://127.0.0.1:3000 (o en una ventana privada).
+   Una ventana común del mismo navegador comparte la cookie de sesión con la A (las cookies no
+   distinguen puerto ni ventana) y un login pisaría al otro.
+3. En B: «Tocá para pedir» → Sofía → agregá productos de varias categorías → confirmá.
 4. En B: aparece el QR con el importe → «Simular pago aprobado».
-5. En A: el pedido aparece solo, en unos 2 s. Tocá «Listo».
-6. En B: aparece el aviso «¡Listo para retirar!» → «Terminar»; el kiosco vuelve a la bienvenida.
+5. En A: el pedido aparece solo, en unos 2 s. Tocá «Marcar listo».
+6. En B: aparece el aviso «¡Tu pedido está listo!» → «Terminar»; el kiosco vuelve a la bienvenida.
 
 ## Verificación
 

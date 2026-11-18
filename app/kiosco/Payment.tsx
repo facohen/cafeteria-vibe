@@ -46,7 +46,7 @@ export function Payment({
       </header>
 
       <h1 className="k-pay__title">Pagá con QR</h1>
-      <p className="k-pay__sub">Escaneá el código con tu billetera virtual.</p>
+      <p className="k-pay__sub">Pago simulado: no hace falta escanear, aprobalo acá abajo.</p>
 
       <div className="k-pay__amount" aria-label={`Total a pagar ${formatPrice(order.total)}`}>
         <span>Total</span>

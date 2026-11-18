@@ -12,8 +12,9 @@ import { CUSTOMER_EMAIL, KITCHEN_EMAIL, STAFF_DEMO_PASSWORD, db, useFreshDb } fr
 
 useFreshDb();
 
-function req(url: string, opts: { token?: string; body?: string; method?: string } = {}) {
-  const headers = new Headers({ "content-type": "application/json" });
+function req(url: string, opts: { token?: string; body?: string; method?: string; origin?: string } = {}) {
+  const headers = new Headers({ "content-type": "application/json", host: "localhost" });
+  if (opts.origin) headers.set("origin", opts.origin);
   if (opts.token) headers.set("cookie", `${SESSION_COOKIE}=${opts.token}`);
   return new NextRequest(`http://localhost${url}`, { method: opts.method ?? "GET", headers, body: opts.body });
 }
@@ -53,6 +54,17 @@ describe("rutas con :id", () => {
     const r = await status(ordersRoute.POST(req("/api/orders", { token, method: "POST", body: "{no json" }), noParams));
     expect(r.status).toBe(400);
     expect(r.body.error.code).toBe("VALIDATION");
+  });
+});
+
+describe("origen", () => {
+  it("POST desde otro origen (otro puerto) → 403; mismo origen → 200", async () => {
+    const { token } = loginCustomer(CUSTOMER_EMAIL);
+    const body = JSON.stringify({ items: [{ productId: 1, quantity: 1 }] });
+    const cross = await status(ordersRoute.POST(req("/api/orders", { token, method: "POST", body, origin: "http://localhost:3103" }), noParams));
+    expect(cross.status).toBe(403);
+    const same = await status(ordersRoute.POST(req("/api/orders", { token, method: "POST", body, origin: "http://localhost" }), noParams));
+    expect(same.status).toBe(200);
   });
 });
 

@@ -34,7 +34,7 @@ components/        ui.tsx (componentes compartidos), icons.tsx (íconos propios 
 lib/contracts.ts   tipos, errores, límites y rutas HTTP (contrato compartido)
 lib/db.ts          esquema SQLite, semilla idempotente, getDb()
 lib/services/      servicios de dominio: auth.ts, catalog.ts, orders.ts
-tests/             pruebas Vitest de los servicios
+tests/             pruebas Vitest de los servicios y de la capa HTTP (http.test.ts)
 scripts/seed.mjs   npm run seed
 data/              base SQLite (no versionada)
 ```
