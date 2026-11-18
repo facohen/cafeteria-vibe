@@ -209,11 +209,17 @@ se ignora: el importe siempre sale de `products.price`.
 
 ### HTTP
 
-Rutas en `app/api/**/route.ts` (ver lista en `lib/contracts.ts`). Cada handler: lee la cookie
-`vc_session` → `getSessionUser` → llama al servicio → JSON. `AppError` → status de `ERROR_STATUS`
+Rutas en `app/api/**/route.ts` (ver lista en `lib/contracts.ts`). Cada handler: lee la cookie de
+su pantalla → `getSessionUser` → llama al servicio → JSON. `AppError` → status de `ERROR_STATUS`
 con `{ error: { code, message } }`; cualquier otro error → 500 `INTERNAL` sin detalles internos.
 El `:id` de la URL se pasa crudo al servicio, que lo valida después de sesión y rol (así `/api/orders/abc`
-sin sesión da 401, no 404). Cookie: `httpOnly`, `sameSite=lax`, `path=/`, `maxAge` 12 h, `Secure` solo con `VIBE_COOKIE_SECURE=1`
+sin sesión da 401, no 404).
+**Una cookie por pantalla**: `vc_session` (kiosco: `/api/auth/google`, `/api/me`, `/api/catalog`,
+`/api/orders/**`) y `vc_staff_session` (personal: `/api/auth/staff`, `/api/kitchen/**` y las páginas
+`/cocina` y `/admin`; en la tarea 2 también la administración). Se elige con `handle(fn, "staff")` y
+`getCurrentUser("staff")` (por defecto en Server Components). `POST /api/auth/logout` cierra la del
+kiosco y `?scope=staff` la del personal. Así kiosco y cocina conviven en el mismo navegador: entrar como
+personal no pisa ni revoca la sesión del cliente. Cookie: `httpOnly`, `sameSite=lax`, `path=/`, `maxAge` 12 h, `Secure` solo con `VIBE_COOKIE_SECURE=1`
 (la demo corre por HTTP local, también por la IP de red). Anti-CSRF: `handle` rechaza con 403 todo
 método distinto de GET cuyo `Origin` no coincida con `Host` (cubre otros puertos del mismo host).
 Token: 32 bytes aleatorios (hex). Las sesiones vencen a las 12 h (`SESSION_TTL_HOURS`) y un login

@@ -10,7 +10,7 @@ export default function LogoutButton() {
   const [busy, setBusy] = useState(false);
   async function logout() {
     setBusy(true);
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+    await fetch("/api/auth/logout?scope=staff", { method: "POST" }).catch(() => undefined);
     router.replace("/personal");
     router.refresh();
   }

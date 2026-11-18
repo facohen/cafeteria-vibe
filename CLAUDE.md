@@ -66,8 +66,10 @@ data/              base SQLite (no versionada)
   Next agrega `.next-<x>/types/**` al `include` de `tsconfig.json` al arrancar con otro
   `NEXT_DIST_DIR`: no commitear esas líneas (dejar solo `.next/types` y `.next/dev/types`).
   Borrar la carpeta `.next-<x>` al terminar.
-- Navegador: las cookies no distinguen puerto. Dos sesiones a la vez (kiosco y cocina) necesitan
-  orígenes distintos: `localhost` y `127.0.0.1`, o `<algo>.localhost`.
+- Sesiones: una cookie por pantalla (`vc_session` kiosco, `vc_staff_session` personal; ver
+  `lib/contracts.ts`). Toda ruta nueva del personal (p. ej. administración en la tarea 2) usa
+  `handle(fn, "staff")`; las del kiosco, `handle(fn)`. Las cookies no distinguen puerto: dos agentes
+  probando en el mismo navegador usan hosts distintos (`<agente>.localhost`) para no pisarse.
 - Quien construye una parte no la revisa ni la verifica: lo hace otro agente.
 
 ## Antes de commit

@@ -136,15 +136,24 @@ export interface DemoAccounts {
   staffDemoPassword: string;
 }
 
+/**
+ * Una cookie por pantalla, para que kiosco y personal convivan en el mismo navegador:
+ * SESSION_COOKIE la usa el kiosco (login Google simulado, catálogo, pedidos, /api/me);
+ * STAFF_SESSION_COOKIE la usa el personal (login staff, cocina y, en la tarea 2, administración).
+ * Cada ruta lee SOLO la cookie de su pantalla.
+ */
 export const SESSION_COOKIE = "vc_session";
+export const STAFF_SESSION_COOKIE = "vc_staff_session";
+export type SessionScope = "kiosk" | "staff";
 
 /**
- * API HTTP (Route Handlers en app/api). JSON in/out. Sesión por cookie httpOnly SESSION_COOKIE.
+ * API HTTP (Route Handlers en app/api). JSON in/out. Sesión por cookie httpOnly: SESSION_COOKIE en las
+ * rutas del kiosco y STAFF_SESSION_COOKIE en /api/auth/staff y /api/kitchen/** (ver arriba).
  *
  *  GET  /api/auth/demo-accounts       público -> DemoAccounts
  *  POST /api/auth/google  {email}     público; solo cuentas rol cliente activas -> { user: User }  (setea cookie)
  *  POST /api/auth/staff   {email,password} público; solo cocina/admin activos -> { user: User, redirect: "/cocina"|"/admin" }
- *  POST /api/auth/logout              -> { ok: true } (borra sesión y cookie)
+ *  POST /api/auth/logout[?scope=staff] -> { ok: true } (borra la sesión y la cookie del kiosco o, con scope=staff, del personal)
  *  GET  /api/me                       -> { user: User | null }
  *
  *  GET  /api/catalog                  cliente -> Catalog (todas las categorías y productos, con `available`)

@@ -67,7 +67,7 @@ export default function Kiosk() {
 
   /**
    * Muestra el mensaje de la API. Si la sesión ya no vale (401) o ya no es la del cliente dueño
-   * (403: p. ej. alguien entró como personal en este mismo navegador y pisó la cookie), vuelve a la
+   * (403: la sesión ya no es la del cliente dueño del pedido), vuelve a la
    * bienvenida en vez de seguir reintentando.
    */
   const handleError = useCallback(
@@ -80,7 +80,7 @@ export default function Kiosk() {
       if (err?.status === 403) {
         saveOrderId(null);
         resetToWelcome(
-          "La sesión de este kiosco cambió (¿se entró como personal en este mismo navegador?). Tocá para empezar de nuevo.",
+          "Tu sesión ya no puede ver este pedido. Tocá para empezar de nuevo.",
         );
         return;
       }

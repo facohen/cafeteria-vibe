@@ -1,18 +1,31 @@
 // Sesión HTTP (solo servidor): cookie → usuario, y helper para Route Handlers.
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
-import { AppError, ERROR_STATUS, SESSION_COOKIE, type ApiError, type SessionUser } from "@/lib/contracts";
+import {
+  AppError,
+  ERROR_STATUS,
+  SESSION_COOKIE,
+  STAFF_SESSION_COOKIE,
+  type ApiError,
+  type SessionScope,
+  type SessionUser,
+} from "@/lib/contracts";
 import { getSessionUser, SESSION_TTL_HOURS } from "@/lib/services/auth";
 
-/** Usuario de la sesión actual (Server Components y Route Handlers). */
-export async function getCurrentUser(): Promise<SessionUser | null> {
-  const store = await cookies();
-  return getSessionUser(store.get(SESSION_COOKIE)?.value ?? null);
+/** Nombre de la cookie de cada pantalla (kiosco o personal). */
+export function cookieName(scope: SessionScope): string {
+  return scope === "staff" ? STAFF_SESSION_COOKIE : SESSION_COOKIE;
 }
 
-/** Token de sesión de la cookie del request. */
-export function getSessionToken(req: NextRequest): string | null {
-  return req.cookies.get(SESSION_COOKIE)?.value ?? null;
+/** Usuario de la sesión actual en Server Components. Por defecto, la del personal (/cocina, /admin). */
+export async function getCurrentUser(scope: SessionScope = "staff"): Promise<SessionUser | null> {
+  const store = await cookies();
+  return getSessionUser(store.get(cookieName(scope))?.value ?? null);
+}
+
+/** Token de sesión de la cookie del request para esa pantalla. */
+export function getSessionToken(req: NextRequest, scope: SessionScope = "kiosk"): string | null {
+  return req.cookies.get(cookieName(scope))?.value ?? null;
 }
 
 const cookieBase = () => ({
@@ -24,13 +37,13 @@ const cookieBase = () => ({
   maxAge: SESSION_TTL_HOURS * 3600,
 });
 
-export function setSessionCookie(res: NextResponse, token: string): NextResponse {
-  res.cookies.set(SESSION_COOKIE, token, cookieBase());
+export function setSessionCookie(res: NextResponse, token: string, scope: SessionScope = "kiosk"): NextResponse {
+  res.cookies.set(cookieName(scope), token, cookieBase());
   return res;
 }
 
-export function clearSessionCookie(res: NextResponse): NextResponse {
-  res.cookies.set(SESSION_COOKIE, "", { ...cookieBase(), maxAge: 0 });
+export function clearSessionCookie(res: NextResponse, scope: SessionScope = "kiosk"): NextResponse {
+  res.cookies.set(cookieName(scope), "", { ...cookieBase(), maxAge: 0 });
   return res;
 }
 
@@ -71,10 +84,11 @@ function originHost(origin: string): string | null {
 }
 
 /**
- * Envuelve un Route Handler: resuelve el actor desde la cookie, espera `params` (Promise en Next 16),
- * serializa el resultado como JSON (o lo devuelve tal cual si ya es un Response) y traduce errores.
+ * Envuelve un Route Handler: resuelve el actor desde la cookie de su pantalla (`scope`: "kiosk" por
+ * defecto, "staff" para el personal), espera `params` (Promise en Next 16), serializa el resultado
+ * como JSON (o lo devuelve tal cual si ya es un Response) y traduce errores.
  */
-export function handle<P extends Params = Record<string, never>>(fn: Handler<P>) {
+export function handle<P extends Params = Record<string, never>>(fn: Handler<P>, scope: SessionScope = "kiosk") {
   return async (req: NextRequest, ctx: { params: Promise<P> }): Promise<Response> => {
     try {
       // Anti-CSRF: un navegador siempre manda Origin en POST; si es de otro origen (incluso otro
@@ -83,7 +97,7 @@ export function handle<P extends Params = Record<string, never>>(fn: Handler<P>)
       if (req.method !== "GET" && origin && originHost(origin) !== req.headers.get("host")) {
         throw new AppError("FORBIDDEN", "Origen no permitido");
       }
-      const actor = getSessionUser(getSessionToken(req));
+      const actor = getSessionUser(getSessionToken(req, scope));
       const params = ((await ctx?.params) ?? {}) as P;
       const result = await fn(actor, req, params);
       if (result instanceof Response) {

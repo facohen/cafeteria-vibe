@@ -9,6 +9,6 @@ export const POST = handle(async (_actor, req) => {
   const b = (typeof body === "object" && body !== null ? body : {}) as { email?: unknown; password?: unknown };
   const { token, user } = loginStaff(b.email, b.password);
   const redirect = user.role === "admin" ? "/admin" : "/cocina";
-  logout(getSessionToken(req)); // un login nuevo revoca la sesión previa del navegador
-  return setSessionCookie(NextResponse.json({ user, redirect }), token);
-});
+  logout(getSessionToken(req, "staff")); // un login nuevo revoca la sesión previa del personal en este navegador
+  return setSessionCookie(NextResponse.json({ user, redirect }), token, "staff");
+}, "staff");
