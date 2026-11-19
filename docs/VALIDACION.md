@@ -122,8 +122,8 @@ quedaron cubiertos por `review-rules.test.ts` o verificados en la app.
 ## Verificación desde estado limpio
 
 ```bash
-DIR=$(mktemp -d) && git clone <repo> "$DIR/cafeteria-vibe" && cd "$DIR/cafeteria-vibe"
-git checkout <rama>
+DIR=$(mktemp -d) && git clone <url-del-repo> "$DIR/cafeteria-vibe" && cd "$DIR/cafeteria-vibe"
+git checkout main
 npm install
 npm run seed        # primera carga
 npm run seed        # segunda: no duplica ni pisa (comparar conteos de users, categories, products, orders)
@@ -133,13 +133,11 @@ npm start           # http://localhost:3000 → recorrido de demostración
 
 | Paso | Resultado |
 |---|---|
-| `npm install` | pendiente |
-| `npm run seed` ×2 (mismos conteos) | pendiente |
-| `npm run build` | pendiente |
-| `npm start` + recorrido | pendiente |
+| `npm install` | ✅ (2026-11-19, clon de `spec-2-b` en carpeta temporal, Node 24.21) |
+| `npm run seed` ×2 (mismos conteos) | ✅ las dos: 7 usuarios, 3 categorías, 24 productos, 8 pedidos (15 líneas); `npm test` 175/175 en el clon |
+| `npm run build` | ✅ sin errores |
+| `npm start` + recorrido | ✅ con curl: `/` y `/personal` 200, `/admin` 307; Martín repite su «de siempre» → pago → cocina lo ve → listo → kiosco ve `listo` → terminar 200; cocina en API admin 403; admin ve catálogo y `/admin/usuarios` 200. La interfaz se recorrió en Chrome sobre `next dev` (ver recorrido) |
 
 ## Pendientes
 
-- Completar los resultados de este documento con lo ejecutado (pruebas, recorrido, estado limpio).
-- Completar la tabla de pruebas automáticas con los archivos nuevos de la tarea 2.
 - Abiertos del producto: ver [Pendientes en docs/TECNICO.md](TECNICO.md#pendientes).
