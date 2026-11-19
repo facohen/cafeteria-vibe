@@ -5,5 +5,5 @@ const { openDb } = await import("../lib/db.ts");
 const file = process.env.VIBE_DB_PATH || path.join(process.cwd(), "data", "vibe.db");
 const db = openDb(file);
 const count = (t) => db.prepare(`SELECT COUNT(*) n FROM ${t}`).get().n;
-console.log(`Semilla aplicada en ${file}: ${count("users")} usuarios, ${count("categories")} categorías, ${count("products")} productos.`);
+console.log(`Semilla aplicada en ${file}: ${count("users")} usuarios, ${count("categories")} categorías, ${count("products")} productos, ${count("orders")} pedidos (${count("order_items")} líneas).`);
 db.close();

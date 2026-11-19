@@ -1,7 +1,8 @@
 # Vibe Coffee — Documento técnico
 
 Diseño y contratos de la app. Para instalarla y usarla: [README.md](../README.md). Para trabajar
-en el repo: [CLAUDE.md](../CLAUDE.md). Requisitos originales: [spec-1.md](../spec-1.md) (tarea 1) y
+en el repo: [CLAUDE.md](../CLAUDE.md). Criterios de aceptación y resultados:
+[docs/VALIDACION.md](VALIDACION.md). Requisitos originales: [spec-1.md](../spec-1.md) (tarea 1) y
 [spec-2.md](../spec-2.md) (tarea 2).
 
 ## Plan
@@ -40,13 +41,24 @@ Un **coordinador** escribió primero los contratos compartidos (`lib/contracts.t
 Después: integración por el coordinador, **revisión** y **verificación** en la app por agentes
 distintos de los que construyeron cada parte, correcciones y commit.
 
-### Tarea 2: partes en paralelo
+### Tarea 2: partes en paralelo (hecha)
 
-Sobre los contratos de la tarea 2 (al final de `lib/contracts.ts`), un agente por parte:
-administración de usuarios y roles · administración del catálogo · «Pedí lo de siempre» en el
-kiosco · datos de demo completos · pruebas ampliadas · documentación (incluye `docs/VALIDACION.md`).
-Luego revisión de diseño de todas las pantallas, etapa 5 completa en la app y verificación desde
-un estado limpio.
+El coordinador escribió primero los contratos de la tarea 2 (al final de `lib/contracts.ts`, íconos
+nuevos en `ICON_KEYS`, `app/admin/layout.tsx` con las pestañas y `app/admin/admin.css`). Con eso se
+lanzaron juntos:
+
+| Parte | Archivos propios |
+|---|---|
+| Usuarios y roles | `lib/services/users.ts`, `app/api/admin/users/**`, `app/admin/usuarios/**` |
+| Catálogo | `lib/services/admin-catalog.ts`, `app/api/admin/{catalog,categories,products}/**`, `app/admin/catalogo/**` |
+| Kiosco «Pedí lo de siempre» | `getLastOrder` en `lib/services/orders.ts`, `app/api/orders/last`, kiosco (`app/page.tsx` y sus componentes) |
+| Datos de demo e íconos | semilla en `lib/db.ts` (catálogo completo, clientes, pedidos anteriores), `components/icons.tsx` |
+| Pruebas | `tests/**` (CA-15 a CA-21) |
+| Documentación | `README.md`, `CLAUDE.md`, este documento, `docs/VALIDACION.md` |
+
+Después: revisión de código y revisión de diseño de todas las pantallas por agentes distintos de los
+que construyeron, y verificación en la app (etapa 5 y estado limpio) por el coordinador, con los
+resultados en [docs/VALIDACION.md](VALIDACION.md).
 
 ## Requisitos
 
@@ -158,6 +170,16 @@ Decisiones:
 - **Semilla con `INSERT OR IGNORE`** por clave natural (email, slug): se puede correr cuantas veces
   se quiera sin duplicar ni pisar lo editado. La app la aplica sola al abrir la base.
 - **SQLite síncrono** (`better-sqlite3`): API simple, sin pool; suficiente para una demo local.
+- **No se borran productos ni usuarios** (tarea 2): un producto se marca no disponible y un usuario
+  se da de baja (`active = 0`). Así el historial de pedidos sigue completo y consistente; solo se
+  borran categorías vacías.
+- **Slug generado en el servidor** para categorías y productos (único, a partir del nombre): el
+  formulario no lo pide y no puede chocar con la clave natural de la semilla.
+- **Semilla de pedidos idempotente**: los pedidos no tienen clave natural, así que la semilla carga
+  los pedidos anteriores de un cliente de demo solo si ese cliente todavía no tiene ningún pedido
+  `pagado`, `listo` o `entregado` (los pendientes o cancelados no cuentan como historial).
+- **«Pedí lo de siempre» reusa `createOrder`**: el kiosco toma los items de `getLastOrder` y crea un
+  pedido nuevo; precios, disponibilidad y límites se validan igual que en un pedido armado a mano.
 
 ## Modelo de datos
 
@@ -199,8 +221,28 @@ Todas las funciones son síncronas, usan `getDb()` y reciben `actor: SessionUser
 | `listKitchenOrders(actor): Order[]` | orders.ts | cocina | estados `pagado` y `listo` (nunca `pendiente_pago`), del más viejo al más nuevo |
 | `markReady(actor, id): Order` | orders.ts | cocina | `pagado → listo`, setea `readyAt`; otro estado → `INVALID_TRANSITION` |
 
+Tarea 2:
+
+| Función | Archivo | Quién | Efecto / reglas |
+|---|---|---|---|
+| `getLastOrder(actor): Order \| null` | orders.ts | cliente | último pedido **propio** en `pagado`/`listo`/`entregado`; `null` si no tiene |
+| `listUsers(actor): User[]` | users.ts | admin | todos, por rol y nombre |
+| `createUser(actor, input): User` | users.ts | admin | valida como `UserInput`; personal nuevo recibe la contraseña de demo |
+| `updateUser(actor, id, patch): User` | users.ts | admin | edición parcial (incluye rol y reactivar); `active=false` o cambio de rol borran sus sesiones |
+| `deactivateUser(actor, id): User` | users.ts | admin | baja: `active=false` y borra sus sesiones |
+| `getAdminCatalog(actor): Catalog` | admin-catalog.ts | admin | todas las categorías y productos, incluidos no disponibles |
+| `createCategory` / `updateCategory(actor, …): Category` | admin-catalog.ts | admin | valida `CategoryInput`; slug generado en el servidor |
+| `deleteCategory(actor, id): void` | admin-catalog.ts | admin | solo si no tiene productos; si no, `VALIDATION` |
+| `createProduct` / `updateProduct(actor, …): Product` | admin-catalog.ts | admin | valida `ProductInput` (precio, ícono, disponibilidad…); edición parcial; no hay borrado |
+
 Orden de chequeo en cada operación: sesión (`UNAUTHENTICATED`) → rol (`FORBIDDEN`) →
-existencia (`NOT_FOUND`) → propiedad (`FORBIDDEN`) → transición (`INVALID_TRANSITION`).
+existencia (`NOT_FOUND`) → propiedad (`FORBIDDEN`) → transición (`INVALID_TRANSITION`). En la
+administración: sesión → rol → existencia → validación (`VALIDATION`).
+
+Validación de la administración (límites en `ADMIN_LIMITS`): email recortado, en minúsculas, con
+formato `x@y.z` y único sin distinguir mayúsculas; nombres recortados y no vacíos; rol ∈ `ROLES`;
+precio entero entre `minPrice` y `maxPrice`; ícono ∈ `ICON_KEYS`; `categoryId` existente; `sort`
+entero ≥ 0. Detalle en los comentarios de `UserInput`, `CategoryInput` y `ProductInput`.
 
 Validación de `createOrder` (`VALIDATION`): `items` es array de 1 a `LIMITS.maxLines` líneas;
 `productId` entero existente; producto `available`; `quantity` entero entre 1 y 20; un mismo
@@ -216,7 +258,7 @@ El `:id` de la URL se pasa crudo al servicio, que lo valida después de sesión 
 sin sesión da 401, no 404).
 **Una cookie por pantalla**: `vc_session` (kiosco: `/api/auth/google`, `/api/me`, `/api/catalog`,
 `/api/orders/**`) y `vc_staff_session` (personal: `/api/auth/staff`, `/api/kitchen/**` y las páginas
-`/cocina` y `/admin`; en la tarea 2 también la administración). Se elige con `handle(fn, "staff")` y
+`/cocina`, `/admin/**` y las rutas `/api/admin/**`). Se elige con `handle(fn, "staff")` y
 `getCurrentUser("staff")` (por defecto en Server Components). `POST /api/auth/logout` cierra la del
 kiosco y `?scope=staff` la del personal. Así kiosco y cocina conviven en el mismo navegador: entrar como
 personal no pisa ni revoca la sesión del cliente. Cookie: `httpOnly`, `sameSite=lax`, `path=/`, `maxAge` 12 h, `Secure` solo con `VIBE_COOKIE_SECURE=1`
@@ -225,6 +267,17 @@ método distinto de GET cuyo `Origin` no coincida con `Host` (cubre otros puerto
 Token: 32 bytes aleatorios (hex). Las sesiones vencen a las 12 h (`SESSION_TTL_HOURS`) y un login
 nuevo revoca la sesión previa del mismo navegador.
 
+Rutas de la tarea 2:
+
+| Ruta | Cookie | Respuesta |
+|---|---|---|
+| `GET /api/orders/last` | kiosco | `{ order: Order \| null }` |
+| `GET /api/admin/users` · `POST` (`UserInput`) | personal | `{ users }` · `{ user }` |
+| `PATCH /api/admin/users/:id` (`Partial<UserInput>`) · `DELETE` (baja) | personal | `{ user }` |
+| `GET /api/admin/catalog` | personal | `Catalog` (incluye no disponibles) |
+| `POST /api/admin/categories` · `PATCH`/`DELETE /api/admin/categories/:id` | personal | `{ category }` · `{ ok: true }` |
+| `POST /api/admin/products` · `PATCH /api/admin/products/:id` | personal | `{ product }` |
+
 ### Páginas
 
 | Ruta | Rol | Contenido |
@@ -232,8 +285,12 @@ nuevo revoca la sesión previa del mismo navegador.
 | `/` | público → cliente | kiosco: bienvenida + Google simulado → menú por categorías + carrito → QR → estado/aviso → terminar |
 | `/personal` | público | entrada única del personal, precargada con la cuenta de cocina; un toque cambia a admin |
 | `/cocina` | cocina | tablero de pedidos pagados en tiempo real (polling 2 s), botón «Listo» |
-| `/admin` | admin | pantalla mínima: «la gestión se construye en la tarea 2» |
+| `/admin` | admin | redirige a `/admin/catalogo` |
+| `/admin/catalogo` | admin | categorías y productos: alta, edición, precio, ícono, disponibilidad |
+| `/admin/usuarios` | admin | usuarios: alta, edición, rol, baja y reactivación |
 
+`app/admin/layout.tsx` pone la barra superior y las pestañas (`AdminTabs`) de la administración y
+redirige a `/personal` si no es admin; cada página y cada ruta `/api/admin/**` vuelve a verificar.
 Las páginas protegidas verifican sesión y rol en el servidor (Server Component) y redirigen a
 `/personal` si no corresponde. La API vuelve a verificar todo: la página no es el control.
 
@@ -245,6 +302,12 @@ Las páginas protegidas verifican sesión y rol en el servidor (Server Component
 - Componentes: `components/ui.tsx` (`Button`, `Card`, `Brand`, `Price`, `formatPrice`,
   `StatusBadge`, `STATUS_LABEL`, `orderNumber`, `api` para fetch JSON) y
   `components/icons.tsx` (`ProductIcon({ icon: IconKey, size })`, un SVG propio por `ICON_KEYS`).
+- Íconos de la tarea 2: `americano`, `mocha`, `frio`, `chocolate`, `limonada`, `agua`, `alfajor`,
+  `cookie`, `muffin` (catálogo completo).
+- Administración: `app/admin/admin.css` con clases `ad-*` compartidas (`ad-main`, `ad-tabs`/`ad-tab`,
+  `ad-head`, `ad-title`, `ad-table`, `ad-form`/`ad-field`, `ad-actions`, `ad-msg`…), sobre las
+  variables `--vc-*`; cada sección suma lo propio con prefijo `adc-` (catálogo) o `adu-` (usuarios).
+  Reusa la barra del personal (`app/personal/staff.css`).
 
 ## Seguridad
 
@@ -269,19 +332,28 @@ Las páginas protegidas verifican sesión y rol en el servidor (Server Component
   personal (`cafe1234`) es un dato de demo público, expuesto a propósito para precargar `/personal`.
 - **Errores**: `AppError` devuelve código y mensaje pensados para el usuario; cualquier otro error
   es 500 genérico, sin detalles internos (se registra solo en la consola del servidor).
+- **Administración** (tarea 2): toda validación de usuarios y catálogo se hace en el servidor
+  (`users.ts`, `admin-catalog.ts`), con la cookie del personal y rol `admin`. Un admin no puede
+  darse de baja ni quitarse el rol `admin` a sí mismo (`VALIDATION`), y ningún cambio puede dejar
+  cero admins activos (`VALIDATION`, chequeado dentro de la transacción). Las operaciones de
+  usuarios vuelven a leer al actor dentro de la transacción: un admin degradado o dado de baja con
+  una petición en vuelo recibe `FORBIDDEN`. Los nombres (usuarios, categorías, productos) rechazan
+  caracteres de control, saltos de línea y nombres hechos solo de caracteres invisibles.
+  Dar de baja o cambiar el rol borra todas las sesiones del usuario: no puede entrar ni seguir con una sesión previa
+  (`getSessionUser` además ignora usuarios inactivos). Las respuestas nunca incluyen `password_hash`.
+- **Personal nuevo**: el que da de alta admin recibe la contraseña de demo (`STAFF_DEMO_PASSWORD`,
+  `cafe1234`), guardada con scrypt. Es un dato de demo documentado, no un secreto; en un despliegue
+  real habría que pedir una contraseña propia.
+- **«Pedí lo de siempre»**: `getLastOrder` filtra por el usuario de la sesión; nunca recibe un id de
+  pedido ni de cliente desde la interfaz.
 - **Mínimo acceso**: cada rol accede solo a sus rutas (cliente: catálogo y sus pedidos; cocina:
   tablero; admin: gestión); `/api/auth/demo-accounts` expone solo email, nombre y rol de cuentas activas, más la contraseña de demo.
 
-## Pendiente para la tarea 2
+## Pendientes
 
-- Administración de usuarios y roles (alta, edición, baja, asignación de rol) reemplazando la
-  `/admin` mínima, según los contratos al final de `lib/contracts.ts`.
-- Administración del catálogo: categorías, productos, precios, íconos y disponibilidad.
-- «Pedí lo de siempre»: `getLastOrder` y `GET /api/orders/last`, y el botón en el kiosco.
-- Datos de demo completos: catálogo completo con íconos propios (ampliar `ICON_KEYS` si hace falta
-  es cambio de contrato), varios clientes y pedidos anteriores. Los pedidos no tienen clave natural:
-  la semilla debe marcarlos de forma idempotente (p. ej. solo si el cliente no tiene pedidos).
-- Pruebas ampliadas (CA-15 a CA-21), revisión de diseño de todas las pantallas, `docs/VALIDACION.md`
-  y verificación desde un estado limpio.
-- Pendiente abierto: un pedido `listo` que el cliente no termina queda así; cocina no tiene acción
-  para entregarlo (evaluar si hace falta para la demo).
+- Un pedido `listo` que el cliente no termina queda así; cocina no tiene acción para entregarlo
+  (alcanza para la demo: «Terminar» en el kiosco lo cierra).
+- El personal nuevo usa la contraseña de demo; no hay cambio de contraseña.
+- Volver a cargar la semilla (o reiniciar la app) recrea una categoría de demo que admin haya
+  borrado, porque la semilla completa lo que falta por slug.
+- Resultados de la verificación en la app y desde estado limpio: ver [docs/VALIDACION.md](VALIDACION.md).

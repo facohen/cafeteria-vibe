@@ -1,0 +1,14 @@
+/* Usuarios y roles (tarea 2). Prefijo adu-. Solo variables --vc-* de globals.css. */
+.adu-note { margin: 0; padding: 14px 18px; border-radius: var(--vc-radius-sm); background: var(--vc-green-soft); color: var(--vc-ink); font-weight: 700; }
+.adu-note code { font-weight: 900; color: var(--vc-green-strong); }
+.adu-new { display: flex; flex-direction: column; gap: 16px; }
+.adu-email { color: var(--vc-muted); word-break: break-all; }
+.adu-me { margin-left: 8px; font-size: .85rem; }
+.adu-cell-input {
+  width: 100%; min-width: 140px; min-height: 44px; padding: 0 12px; border-radius: var(--vc-radius-sm);
+  border: 2px solid var(--vc-line); font-family: inherit; font-size: 1rem; color: var(--vc-ink); background: var(--vc-surface);
+}
+.adu-cell-input:focus { outline: none; border-color: var(--vc-green-strong); background: var(--vc-bg); }
+.adu-cell-input:disabled { color: var(--vc-muted); }
+.adu-confirm { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font-weight: 800; }
+.adu-row--edit td { background: var(--vc-surface); }

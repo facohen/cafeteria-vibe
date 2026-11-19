@@ -75,3 +75,31 @@ export function expectCode(fn: () => unknown, code: ErrorCode): void {
   expect(thrown, `se esperaba AppError ${code}, se lanzó: ${String(thrown)}`).toBeInstanceOf(AppError);
   expect((thrown as AppError).code).toBe(code);
 }
+
+// ---- Tarea 2 ----
+
+/** Clientes de la semilla completa con pedidos anteriores (entregado) y la clienta sin pedidos. */
+export const CUSTOMERS_WITH_HISTORY = ["sofia@gmail.com", "lucas@gmail.com", "valentina@gmail.com", "martin@gmail.com"];
+export const CUSTOMER_WITHOUT_HISTORY = "camila@gmail.com";
+
+/** Personal (cocina o admin) por email con la contraseña de demo. */
+export function staffActor(email: string, password = STAFF_DEMO_PASSWORD): SessionUser {
+  return resolve(loginStaff(email, password).token);
+}
+
+export function userId(email: string): number {
+  const row = current.prepare("SELECT id FROM users WHERE email = ?").get(email) as { id: number } | undefined;
+  if (!row) throw new Error(`usuario ${email} no existe`);
+  return row.id;
+}
+
+export function count(table: string, where = "1 = 1", ...args: unknown[]): number {
+  return (current.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${where}`).get(...args) as { n: number }).n;
+}
+
+export function sessionCount(uid: number): number {
+  return count("sessions", "user_id = ?", uid);
+}
+
+/** Id que no existe en ninguna tabla de la semilla. */
+export const MISSING_ID = 987_654;

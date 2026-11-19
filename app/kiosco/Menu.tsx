@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
-import type { Catalog, Product, User } from "@/lib/contracts";
+import type { Catalog, Order, Product, User } from "@/lib/contracts";
 import { LIMITS } from "@/lib/contracts";
 import { Brand, Button, formatPrice } from "@/components/ui";
 import { ProductIcon } from "@/components/icons";
+import { RepeatCard } from "./RepeatCard";
 
 export type Cart = Record<number, number>; // productId -> cantidad
 
@@ -19,6 +20,9 @@ export function Menu({
   busy,
   error,
   onDismissError,
+  lastOrder,
+  onRepeat,
+  repeatNotice,
 }: {
   user: User;
   catalog: Catalog;
@@ -30,13 +34,21 @@ export function Menu({
   busy: boolean;
   error: string | null;
   onDismissError: () => void;
+  /** Último pedido pagado del cliente («Pedí lo de siempre»); null = no se muestra la tarjeta. */
+  lastOrder: Order | null;
+  onRepeat: () => void;
+  repeatNotice: string | null;
 }) {
-  const categories = [...catalog.categories].sort((a, b) => a.sort - b.sort);
+  // Solo categorías con productos: el admin puede crear categorías vacías y no deben aparecer.
+  const withProducts = new Set(catalog.products.map((p) => p.categoryId));
+  const categories = catalog.categories
+    .filter((c) => withProducts.has(c.id))
+    .sort((a, b) => a.sort - b.sort || a.id - b.id);
   const [catId, setCatId] = useState<number | null>(categories[0]?.id ?? null);
   const activeCat = categories.find((c) => c.id === catId) ?? categories[0];
   const products = catalog.products
     .filter((p) => p.categoryId === activeCat?.id)
-    .sort((a, b) => a.sort - b.sort);
+    .sort((a, b) => a.sort - b.sort || a.id - b.id);
 
   const byId = new Map(catalog.products.map((p) => [p.id, p]));
   const lines = Object.entries(cart)
@@ -60,7 +72,11 @@ export function Menu({
         </div>
       </header>
 
-      <h1 className="k-menu__title">¿Qué vas a tomar hoy?</h1>
+      {lastOrder && (
+        <RepeatCard order={lastOrder} catalog={catalog} onRepeat={onRepeat} busy={busy} notice={repeatNotice} />
+      )}
+
+      <h1 className="k-menu__title">{lastOrder ? "¿O preferís otra cosa?" : "¿Qué vas a tomar hoy?"}</h1>
 
       <div className="k-menu__body">
         <nav className="k-cats" aria-label="Categorías">
@@ -82,7 +98,7 @@ export function Menu({
         </nav>
 
         <section className="k-grid" aria-label={activeCat?.name ?? "Productos"}>
-          {products.length === 0 && <p className="vc-muted">No hay productos en esta categoría.</p>}
+          {products.length === 0 && <p className="vc-muted">Por ahora no hay productos para pedir.</p>}
           {products.map((p) => {
             const inCart = cart[p.id] ?? 0;
             const atMax = inCart >= LIMITS.maxQuantity;

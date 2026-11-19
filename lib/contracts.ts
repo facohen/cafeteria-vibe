@@ -34,6 +34,16 @@ export const ICON_KEYS = [
   "tostado",
   "budin",
   "generico",
+  // Tarea 2 (catálogo completo): íconos propios para las bebidas nuevas y algo de pastelería.
+  "americano",
+  "mocha",
+  "frio",
+  "chocolate",
+  "limonada",
+  "agua",
+  "alfajor",
+  "cookie",
+  "muffin",
 ] as const;
 export type IconKey = (typeof ICON_KEYS)[number];
 
@@ -169,20 +179,102 @@ export type SessionScope = "kiosk" | "staff";
  * Tiempo real: polling cada 2 s de GET /api/orders/:id (kiosco) y GET /api/kitchen/orders (cocina).
  */
 
-// ---- Contratos para la tarea 2 (documentados, no implementados en la tarea 1) ----
+// ---- Contratos de la tarea 2 ----
 /**
- * «Pedí lo de siempre»: lib/services/orders.ts exportará
+ * «Pedí lo de siempre» — lib/services/orders.ts exporta
  *   getLastOrder(actor: SessionUser | null): Order | null
- * - solo rol cliente; devuelve el pedido más reciente DEL PROPIO actor con estado
- *   pagado | listo | entregado (nunca pendiente_pago ni cancelado);
- * - el kiosco lo repite llamando a createOrder con sus items (productId, quantity):
- *   los precios se recalculan con los actuales y si algún producto ya no está
- *   disponible createOrder falla con VALIDATION (el kiosco ofrece armar el pedido).
- * - Ruta: GET /api/orders/last -> { order: Order | null }.
+ * - solo rol cliente (si no, UNAUTHENTICATED / FORBIDDEN); devuelve el pedido más reciente
+ *   DEL PROPIO actor con estado pagado | listo | entregado (nunca pendiente_pago ni cancelado);
+ *   null si no tiene ninguno.
+ * - el kiosco lo repite llamando a createOrder con sus items (productId, quantity): los precios se
+ *   recalculan con los actuales y si algún producto ya no está disponible createOrder falla con
+ *   VALIDATION (el kiosco avisa y ofrece armar el pedido). Después va directo al pago (QR).
+ * - Ruta: GET /api/orders/last (cookie del kiosco) -> { order: Order | null }.
+ */
+
+/** Límites de validación de la administración (los aplica el servidor). */
+export const ADMIN_LIMITS = {
+  emailMax: 120,
+  userNameMax: 60,
+  categoryNameMax: 40,
+  productNameMax: 60,
+  descriptionMax: 200,
+  minPrice: 1,
+  maxPrice: 1_000_000,
+} as const;
+
+/**
+ * Alta / edición de usuario. Edición = parcial (solo los campos enviados).
+ * - email: se recorta y pasa a minúsculas; formato x@y.z; único (sin distinguir mayúsculas).
+ * - name: se recorta; 1..userNameMax.  role ∈ ROLES.  active: boolean (edición permite reactivar).
+ * - Personal nuevo (o cliente que pasa a cocina/admin sin contraseña) recibe la contraseña de demo
+ *   STAFF_DEMO_PASSWORD (lib/db.ts). Los clientes no tienen contraseña (Google simulado).
+ * - Un admin no puede darse de baja ni quitarse el rol admin a sí mismo, y ningún cambio puede dejar
+ *   cero admins activos (VALIDATION). El actor se relee dentro de la transacción (degradado → FORBIDDEN).
+ * - Baja (active=false, por edición o DELETE) o cambio de rol borra todas sus sesiones: no puede entrar
+ *   ni usar una sesión previa. No se borran usuarios (sus pedidos siguen en el historial).
+ * - Nombres sin caracteres de control ni hechos solo de invisibles (también categorías y productos).
+ */
+export interface UserInput {
+  email: string;
+  name: string;
+  role: Role;
+  active?: boolean; // por defecto true en el alta
+}
+
+/** Categoría: name se recorta, 1..categoryNameMax; sort entero >= 0 (por defecto: al final). El slug lo genera el servidor (único). */
+export interface CategoryInput {
+  name: string;
+  sort?: number;
+}
+
+/**
+ * Producto: categoryId existente; name 1..productNameMax; description 0..descriptionMax;
+ * price entero minPrice..maxPrice; icon ∈ ICON_KEYS; available boolean (por defecto true);
+ * sort entero >= 0 (por defecto: al final de su categoría). Slug generado por el servidor (único).
+ * Edición parcial. No se borran productos: se marcan no disponibles (los pedidos guardan su copia).
+ */
+export interface ProductInput {
+  categoryId: number;
+  name: string;
+  description?: string;
+  price: number;
+  icon: IconKey;
+  available?: boolean;
+  sort?: number;
+}
+
+/**
+ * Servicios de administración (rol admin; sin sesión UNAUTHENTICATED, otro rol FORBIDDEN;
+ * datos inválidos VALIDATION; id inexistente NOT_FOUND). Orden: sesión → rol → existencia → validación.
  *
- * Administración (rol admin; todas las demás respuestas FORBIDDEN):
- *   usuarios: alta/edición (email único, name 1-60, role ∈ ROLES, active) y baja (active=false,
- *   borra sus sesiones; un usuario inactivo no puede entrar ni usar una sesión previa);
- *   categorías: name 1-40, slug único, sort; productos: name 1-60, description 0-200,
- *   price entero 1..1_000_000, icon ∈ ICON_KEYS, categoryId existente, available.
+ * lib/services/users.ts
+ *   listUsers(actor): User[]                              (orden: rol, nombre)
+ *   createUser(actor, input: unknown): User               (valida como UserInput)
+ *   updateUser(actor, id: unknown, patch: unknown): User  (Partial<UserInput>)
+ *   deactivateUser(actor, id: unknown): User              (baja: active=false + borra sesiones)
+ *
+ * lib/services/admin-catalog.ts
+ *   getAdminCatalog(actor): Catalog                       (todas las categorías y productos, incluidos no disponibles)
+ *   createCategory(actor, input: unknown): Category
+ *   updateCategory(actor, id: unknown, patch: unknown): Category
+ *   deleteCategory(actor, id: unknown): void              (solo si no tiene productos; si no, VALIDATION)
+ *   createProduct(actor, input: unknown): Product
+ *   updateProduct(actor, id: unknown, patch: unknown): Product   (precio, disponibilidad, etc.)
+ *
+ * Rutas (cookie del personal: handle(fn, "staff")):
+ *   GET    /api/admin/users              -> { users: User[] }
+ *   POST   /api/admin/users      UserInput            -> { user: User }
+ *   PATCH  /api/admin/users/:id  Partial<UserInput>   -> { user: User }
+ *   DELETE /api/admin/users/:id                       -> { user: User }   (baja)
+ *   GET    /api/admin/catalog                         -> Catalog
+ *   POST   /api/admin/categories CategoryInput        -> { category: Category }
+ *   PATCH  /api/admin/categories/:id Partial<CategoryInput> -> { category: Category }
+ *   DELETE /api/admin/categories/:id                  -> { ok: true }
+ *   POST   /api/admin/products   ProductInput         -> { product: Product }
+ *   PATCH  /api/admin/products/:id Partial<ProductInput> -> { product: Product }
+ *
+ * Páginas: /admin redirige a /admin/catalogo; /admin/catalogo y /admin/usuarios (rol admin, si no
+ * redirigen a /personal). app/admin/layout.tsx pone la barra superior y las pestañas.
+ * El kiosco (GET /api/catalog) ya muestra los cambios: no disponibles aparecen deshabilitados.
  */

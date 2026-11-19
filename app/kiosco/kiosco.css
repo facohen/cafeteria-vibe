@@ -132,6 +132,38 @@
   display: grid; place-items: center;
 }
 
+/* ---------- «Pedí lo de siempre» (tarjeta arriba del menú) ---------- */
+.k-repeat { margin: 12px 0 4px; }
+.k-repeat__tap {
+  width: 100%; min-height: calc(var(--vc-tap) * 2.5); display: flex; align-items: center; gap: 20px;
+  padding: 22px 24px; border-radius: 28px; border: 3px solid var(--vc-green); cursor: pointer;
+  background: linear-gradient(120deg, var(--vc-green-soft) 0%, var(--vc-bg) 75%);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--vc-green-strong) 18%, transparent); font: inherit; color: var(--vc-ink); text-align: left;
+  transition: transform .08s, box-shadow .15s;
+}
+.k-repeat__tap:active:not(:disabled) { transform: scale(0.985); }
+.k-repeat__tap:disabled { cursor: not-allowed; }
+.k-repeat.is-off .k-repeat__tap { border-color: var(--vc-line); background: var(--vc-surface); box-shadow: none; }
+.k-repeat.is-off .k-repeat__items { opacity: .55; filter: grayscale(.7); }
+.k-repeat__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.k-repeat__kicker { font-weight: 800; color: var(--vc-green-strong); text-transform: uppercase; letter-spacing: .08em; font-size: .9rem; }
+.k-repeat__title { font-size: clamp(1.8rem, 4.5vw, 2.5rem); font-weight: 900; letter-spacing: -0.02em; line-height: 1.05; }
+.k-repeat__items { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 10px; }
+.k-repeat__item { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.15rem; }
+.k-repeat__qty { color: var(--vc-green-strong); font-weight: 900; }
+.k-repeat__cta { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; text-align: center; }
+.k-repeat__go {
+  width: 88px; height: 88px; border-radius: 50%; background: var(--vc-green); display: grid; place-items: center;
+  font-size: 2.6rem; font-weight: 900; line-height: 1; box-shadow: 0 8px 20px color-mix(in srgb, var(--vc-green-strong) 30%, transparent);
+}
+.k-repeat__ctaText { font-weight: 900; font-size: 1.15rem; }
+.k-repeat__price { display: flex; flex-direction: column; font-weight: 900; font-size: 1.35rem; line-height: 1.1; }
+.k-repeat__price small { color: var(--vc-muted); font-weight: 700; font-size: .9rem; }
+.k-repeat__notice {
+  margin: 10px 0 0; padding: 14px 18px; border-radius: var(--vc-radius-sm);
+  font-weight: 800; font-size: 1.1rem; text-align: center; /* colores: .vc-badge--warn (globals.css) */
+}
+
 /* Carrito fijo abajo (sticky dentro de la columna del kiosco) */
 .k-cart {
   position: sticky; bottom: 0; z-index: 10; margin: 0 -28px; padding: 16px 28px 20px;
@@ -256,4 +288,7 @@
   .k-cat { min-height: 88px; min-width: 130px; }
   .k-cart__pay.vc-btn { min-width: 0; padding: 0 32px; }
   .k-line__price { min-width: 0; }
+  .k-repeat__tap { flex-direction: column; align-items: stretch; padding: 18px; }
+  .k-repeat__cta { flex-direction: row; justify-content: space-between; }
+  .k-repeat__go { width: 64px; height: 64px; font-size: 2rem; }
 }

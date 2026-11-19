@@ -9,6 +9,7 @@ import { api } from "@/components/ui";
 import { Welcome } from "./Welcome";
 import { AccountPicker } from "./AccountPicker";
 import { Menu, type Cart } from "./Menu";
+import { REPEAT_UNAVAILABLE_MSG } from "./RepeatCard";
 import { Payment } from "./Payment";
 import { OrderStatusView } from "./OrderStatusView";
 import "./kiosco.css";
@@ -49,6 +50,8 @@ export default function Kiosk() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [loggingIn, setLoggingIn] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
+  const [repeatNotice, setRepeatNotice] = useState<string | null>(null);
   const busyRef = useRef(false);
 
   const resetToWelcome = useCallback((msg?: string) => {
@@ -57,6 +60,8 @@ export default function Kiosk() {
     setCatalog(null);
     setCart({});
     setOrder(null);
+    setLastOrder(null);
+    setRepeatNotice(null);
     setError(null);
     setOffline(false);
     setPickerOpen(false);
@@ -112,6 +117,7 @@ export default function Kiosk() {
   const loadCatalog = useCallback(async () => {
     const cat = await api<Catalog>("/api/catalog");
     setCatalog(cat);
+    setRepeatNotice(null); // con el catálogo nuevo, RepeatCard decide si algo falta
     const unavailable = new Set(cat.products.filter((p) => !p.available).map((p) => p.id));
     const known = new Set(cat.products.map((p) => p.id));
     setCart((prev) => {
@@ -123,6 +129,19 @@ export default function Kiosk() {
       return next;
     });
     return cat;
+  }, []);
+
+  /** «Pedí lo de siempre»: último pedido pagado del cliente. Si falla, simplemente no se muestra. */
+  const loadLastOrder = useCallback(async () => {
+    setRepeatNotice(null);
+    try {
+      const { order: last } = await api<{ order: Order | null }>("/api/orders/last");
+      setLastOrder(last);
+      return last;
+    } catch {
+      setLastOrder(null);
+      return null;
+    }
   }, []);
 
   // Al cargar: si hay sesión de cliente, directo al menú (o al pedido en curso). Personal -> bienvenida.
@@ -140,6 +159,9 @@ export default function Kiosk() {
         if (cancelled) return;
         setUser(me);
         setCatalog(cat);
+        // Antes de retomar un pedido en curso: si vuelve al menú (p. ej. «Volver» desde el QR), la tarjeta está.
+        await loadLastOrder();
+        if (cancelled) return;
         const savedId = readOrderId();
         if (savedId) {
           try {
@@ -168,7 +190,7 @@ export default function Kiosk() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadLastOrder]);
 
   // Polling cada 2 s mientras el pedido está en preparación.
   const orderId = order?.id;
@@ -213,7 +235,7 @@ export default function Kiosk() {
       setUser(u);
       setCart({});
       setOrder(null);
-      await loadCatalog();
+      await Promise.all([loadCatalog(), loadLastOrder()]);
       setNotice(null);
       setPickerOpen(false);
       setStep("menu");
@@ -270,6 +292,29 @@ export default function Kiosk() {
               status: err.status,
             });
           }
+        }
+        throw err;
+      }
+    });
+  }
+
+  /** Repite el último pedido: mismos productos y cantidades, precios de hoy (los pone el servidor). */
+  function repeatLast() {
+    if (!lastOrder) return;
+    const items = lastOrder.items.map((it) => ({ productId: it.productId, quantity: it.quantity }));
+    return run(async () => {
+      try {
+        const { order: o } = await api<{ order: Order }>("/api/orders", { json: { items } });
+        setOrder(o);
+        saveOrderId(o.id);
+        setStep("pay");
+      } catch (e) {
+        const err = e as ApiErr;
+        if (err.code === "VALIDATION") {
+          // Algo ya no está (sin stock o borrado): avisamos en la tarjeta y el cliente sigue en el menú.
+          await loadCatalog().catch(() => null);
+          setRepeatNotice(REPEAT_UNAVAILABLE_MSG);
+          return;
         }
         throw err;
       }
@@ -364,6 +409,9 @@ export default function Kiosk() {
           busy={busy}
           error={error}
           onDismissError={() => setError(null)}
+          lastOrder={lastOrder}
+          onRepeat={repeatLast}
+          repeatNotice={repeatNotice}
         />
       )}
 

@@ -15,6 +15,16 @@ const WHITE = "#ffffff";
 const PASTRY = "#e8a94f";
 const PASTRY_LIGHT = "#f3c77a";
 const ORANGE = "#f7a531";
+const DARK_COFFEE = "#2e1a0e";
+const MUG_BLACK = "#33302c";
+const CHOCO = "#4a2a17";
+const DULCE = "#b5742d";
+const ICE = "#e3f4ff";
+const WATER = "#cfeaff";
+const LEMON = "#ffe14d";
+const LEMON_LIGHT = "#fff6b0";
+const BERRY = "#5b5fc7";
+const PINK = "#ffd6e0";
 
 /** Vapor: dos o tres volutas sobre una bebida caliente. */
 function Steam({ xs, y = 30 }: { xs: number[]; y?: number }) {
@@ -141,6 +151,145 @@ const ICONS: Record<IconKey, ReactNode> = {
         <circle cx={54} cy={67} r={2} />
       </g>
       <path d="M36 41l3-2M50 39l3 1M62 43l3-2M44 45l2 2" fill="none" stroke={GREEN} strokeWidth={2.6} />
+    </>
+  ),
+  // Taza alta negra sin plato, café negro hasta el borde y tres volutas.
+  americano: (
+    <>
+      <Steam xs={[38, 47, 56]} y={26} />
+      <path d="M62 40h5a9 9 0 0 1 0 18h-5" fill="none" />
+      <path d="M30 32v38a8 8 0 0 0 8 8h16a8 8 0 0 0 8-8V32z" fill={MUG_BLACK} />
+      <path d="M34 42v22" fill="none" stroke={WHITE} strokeWidth={2.4} opacity={0.35} />
+      <path d="M31.5 50h29" fill="none" stroke={GREEN} strokeWidth={4} />
+      <ellipse cx={46} cy={32} rx={16} ry={4} fill={DARK_COFFEE} stroke={INK} />
+      <ellipse cx={46} cy={32} rx={11} ry={2.2} fill="none" stroke={CREMA} strokeWidth={1.6} />
+    </>
+  ),
+  // Jarrito de vidrio: chocolate abajo, café arriba y copete de crema con chocolate.
+  mocha: (
+    <>
+      <path d="M64 46h4a7 7 0 0 1 0 14h-5" fill="none" />
+      <path d="M32.2 58L34 78h28l1.8-20z" fill={CHOCO} stroke="none" />
+      <path d="M31 44L32.2 58h31.6L65 44z" fill={CREMA} stroke="none" />
+      <path d="M32.2 58h31.6" fill="none" strokeWidth={2} />
+      <path d="M30 36L34 78h28l4-42z" fill="none" />
+      <path d="M27 38C25 28 34 23 40 27C42 17 56 17 58 27C64 23 71 29 69 38z" fill={FOAM} />
+      <path d="M35 33l5-3l5 3l5-3l5 3l5-3" fill="none" stroke={CHOCO} strokeWidth={2.4} />
+      <path d="M42 50v6" fill="none" stroke={WHITE} strokeWidth={2.4} opacity={0.5} />
+    </>
+  ),
+  // Vaso alto de café helado con cubos de hielo y sorbete recto.
+  frio: (
+    <>
+      <path d="M31.9 36L36 80h24l4.1-44z" fill="#a8703f" stroke="none" />
+      <path d="M56 58V8" fill="none" stroke={GREEN} strokeWidth={5} />
+      <path d="M56 58V8" fill="none" strokeWidth={1.4} opacity={0.6} />
+      <g fill={ICE} strokeWidth={2} opacity={0.95}>
+        <rect x={36} y={38} width={12} height={12} rx={2.5} transform="rotate(-12 42 44)" />
+        <rect x={46} y={46} width={12} height={12} rx={2.5} transform="rotate(10 52 52)" />
+        <rect x={38} y={56} width={11} height={11} rx={2.5} transform="rotate(-6 43.5 61.5)" />
+      </g>
+      <path d="M31 26L36 80h24l5-54z" fill="none" />
+      <path d="M31 26h34" fill="none" strokeWidth={2} />
+      <g fill={WHITE} stroke="none" opacity={0.85}>
+        <circle cx={63} cy={50} r={1.6} />
+        <circle cx={61.5} cy={62} r={1.3} />
+        <circle cx={33.5} cy={48} r={1.3} />
+      </g>
+    </>
+  ),
+  // Taza ancha de chocolate caliente con malvaviscos.
+  chocolate: (
+    <>
+      <Steam xs={[40, 54]} y={30} />
+      <path d="M70 50h3a8 8 0 0 1 0 16h-4" fill="none" />
+      <path d="M24 46v14a16 16 0 0 0 16 16h16a16 16 0 0 0 16-16V46z" fill={WHITE} />
+      <path d="M26 62h44" fill="none" stroke={GREEN} strokeWidth={4} />
+      <ellipse cx={48} cy={46} rx={24} ry={5} fill={CHOCO} />
+      <g strokeWidth={2}>
+        <rect x={33} y={37} width={10} height={9} rx={2.5} fill={PINK} transform="rotate(-10 38 41.5)" />
+        <rect x={44} y={35} width={10} height={9} rx={2.5} fill={WHITE} transform="rotate(8 49 39.5)" />
+        <rect x={54} y={38} width={9} height={8} rx={2.5} fill={PINK} transform="rotate(14 58.5 42)" />
+      </g>
+    </>
+  ),
+  // Vaso recto de limonada con hielo, rodaja de limón y hojas de menta.
+  limonada: (
+    <>
+      <path d="M33.5 38v38a4 4 0 0 0 4 4h21a4 4 0 0 0 4-4V38z" fill={LEMON_LIGHT} stroke="none" />
+      <g fill={WHITE} strokeWidth={1.8} opacity={0.9}>
+        <rect x={38} y={44} width={10} height={10} rx={2} transform="rotate(-10 43 49)" />
+        <rect x={48} y={52} width={10} height={10} rx={2} transform="rotate(12 53 57)" />
+      </g>
+      <path d="M33 28v48a6 6 0 0 0 6 6h18a6 6 0 0 0 6-6V28z" fill="none" />
+      <path d="M33.5 38h29" fill="none" strokeWidth={2} />
+      <path d="M58 30C58 20 66 16 74 18C74 26 68 32 58 30z" fill={GREEN} />
+      <path d="M58 30Q65 25 71 20" fill="none" strokeWidth={1.6} />
+      <circle cx={32} cy={30} r={10} fill={LEMON} />
+      <circle cx={32} cy={30} r={6.5} fill={LEMON_LIGHT} strokeWidth={1.8} />
+      <path d="M32 23.5v13M25.5 30h13M27.4 25.4l9.2 9.2M36.6 25.4l-9.2 9.2" fill="none" strokeWidth={1.2} />
+    </>
+  ),
+  // Botella de agua con tapa verde y etiqueta con una gota.
+  agua: (
+    <>
+      <rect x={41} y={10} width={14} height={8} rx={2} fill={GREEN} />
+      <path d="M42 18v6q-6 4-6 12v38a6 6 0 0 0 6 6h12a6 6 0 0 0 6-6V36q0-8-6-12v-6z" fill={WATER} />
+      <rect x={36} y={46} width={24} height={18} fill={WHITE} strokeWidth={2.4} />
+      <path d="M48 49q-5 6-5 9a5 5 0 0 0 10 0q0-3-5-9z" fill={WATER} strokeWidth={2} />
+      <path d="M41 32v8M41 70v4" fill="none" stroke={WHITE} strokeWidth={2.6} />
+    </>
+  ),
+  // Alfajor de maicena: dos tapitas, dulce de leche al medio y coco rallado.
+  alfajor: (
+    <>
+      <ellipse cx={48} cy={74} rx={32} ry={5} fill={WHITE} />
+      <path d="M20 58v6a28 8 0 0 0 56 0v-6z" fill={PASTRY_LIGHT} />
+      <path d="M21 52v6a27 7.5 0 0 0 54 0v-6z" fill={DULCE} />
+      <g fill={FOAM} stroke="none">
+        <circle cx={26} cy={58} r={1.6} />
+        <circle cx={40} cy={62.5} r={1.6} />
+        <circle cx={56} cy={62.5} r={1.6} />
+        <circle cx={70} cy={58} r={1.6} />
+      </g>
+      <path d="M20 44v8a28 8 0 0 0 56 0v-8z" fill="#f8e3b8" />
+      <ellipse cx={48} cy={44} rx={28} ry={8} fill="#fbeccc" />
+      <g fill={WHITE} stroke="none">
+        <circle cx={38} cy={42} r={1.5} />
+        <circle cx={48} cy={46} r={1.5} />
+        <circle cx={58} cy={42} r={1.5} />
+        <circle cx={46} cy={40} r={1.2} />
+      </g>
+    </>
+  ),
+  // Cookie redonda con chips de chocolate y un mordisco.
+  cookie: (
+    <>
+      <path d="M57.7 25.9A26 26 0 1 0 72.1 40.3A6 6 0 0 1 65.6 34.6A6 6 0 0 1 57.7 25.9z" fill={PASTRY_LIGHT} />
+      <g fill={CHOCO} stroke="none">
+        <circle cx={38} cy={40} r={3.2} />
+        <circle cx={52} cy={44} r={2.8} />
+        <circle cx={34} cy={56} r={2.8} />
+        <circle cx={48} cy={62} r={3.2} />
+        <circle cx={62} cy={56} r={2.8} />
+        <circle cx={44} cy={30} r={2.4} />
+      </g>
+      <path d="M26 48q1-6 4-9M58 70q5-2 8-6" fill="none" stroke={PASTRY} strokeWidth={2.4} />
+    </>
+  ),
+  // Muffin con pirotín verde a rayas y copete con arándanos.
+  muffin: (
+    <>
+      <path d="M27 52l6 26h30l6-26z" fill={GREEN} />
+      <path d="M38 54l2 23M48 54v23M58 54l-2 23" fill="none" strokeWidth={2} />
+      <path d="M22 50c0-16 11-24 26-24s26 8 26 24c0 3-2 5-5 5H27c-3 0-5-2-5-5z" fill={PASTRY} />
+      <path d="M32 36Q40 30 50 31" fill="none" stroke={PASTRY_LIGHT} strokeWidth={3} />
+      <g fill={BERRY} strokeWidth={1.8}>
+        <circle cx={36} cy={44} r={3.4} />
+        <circle cx={52} cy={38} r={3.4} />
+        <circle cx={60} cy={47} r={3.4} />
+        <circle cx={46} cy={49} r={3} />
+      </g>
     </>
   ),
   // Vaso take away con tapa y faja verde.
