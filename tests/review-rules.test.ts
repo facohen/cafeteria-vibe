@@ -104,7 +104,7 @@ describe("users: nombres", () => {
 });
 
 describe("admin-catalog: nombres con control o invisibles → VALIDATION", () => {
-  const BAD_NAMES = ["Café\ncon leche", "Café\r\n", "Tab\there", "Bell\u0007", "Nul\u0000", "Del\u007F", "\u200B", "\u200B \u200B"];
+  const BAD_NAMES = ["Café\ncon leche", "Café\r\ncon leche", "Tab\there", "Be\u0007ll", "Nu\u0000l", "De\u007Fl", "\u200B", "\u200B \u200B"];
 
   it("categorías: alta y edición", () => {
     const admin = adminActor();
@@ -127,6 +127,18 @@ describe("admin-catalog: nombres con control o invisibles → VALIDATION", () =>
       expectCode(() => updateProduct(admin, latte, { name }), "VALIDATION");
     }
     expect(db().prepare("SELECT * FROM products ORDER BY id").all()).toEqual(before);
+  });
+
+  it("saltos de línea o espacios solo al principio o al final se recortan: se guarda «Café»", () => {
+    const admin = adminActor();
+    const cafes = (db().prepare("SELECT id FROM categories WHERE slug = 'cafes'").get() as { id: number }).id;
+    const c = createCategory(admin, { name: "Café\r\n" });
+    expect(c.name).toBe("Café");
+    expect(updateCategory(admin, c.id, { name: "\n Café \t" }).name).toBe("Café");
+    const p = createProduct(admin, { categoryId: cafes, name: "Café\r\n", price: 1000, icon: "latte" });
+    expect(p.name).toBe("Café");
+    expect(updateProduct(admin, p.id, { name: "\r\nCafé\n" }).name).toBe("Café");
+    expect(db().prepare("SELECT name FROM products WHERE id = ?").get(p.id)).toEqual({ name: "Café" });
   });
 
   it("nombres normales con acentos y signos siguen funcionando", () => {

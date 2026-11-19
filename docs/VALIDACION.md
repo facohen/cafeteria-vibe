@@ -11,30 +11,30 @@ no se ejecutó.
 
 | Criterio | Cómo se verifica | Resultado |
 |---|---|---|
-| CA-1 Google simulado → sesión y menú por categorías | recorrido, paso K1; `flow.test.ts`, `auth.test.ts` | pendiente |
-| CA-2 carrito: agregar, cambiar, quitar; total = servidor | recorrido, paso K2; `validation.test.ts` (precios desde la base) | pendiente |
-| CA-3 pedido `pendiente_pago`, QR con importe, pago → `pagado` | recorrido, paso K3; `flow.test.ts` | pendiente |
-| CA-4 pagado aparece en cocina en ≤ 3 s; sin pagar o cancelado nunca | recorrido, pasos K3–C1 (cronometrado a ojo); `permissions.test.ts`, `transitions.test.ts` | pendiente |
-| CA-5 «Listo» → aviso en el kiosco en ≤ 3 s | recorrido, paso C2 | pendiente |
-| CA-6 «Terminar» → `entregado`, cierra sesión, vuelve a la bienvenida | recorrido, paso K4; `flow.test.ts` | pendiente |
-| CA-7 `/personal` precargada con cocina; un toque cambia a admin; cada rol a su pantalla | recorrido, pasos C0 y A0 | pendiente |
-| CA-8 sin sesión u otro rol: `/cocina` y `/admin` redirigen; API 401/403 | recorrido, pasos N1–N3; `permissions.test.ts`, `http.test.ts` | pendiente |
-| CA-9 pedido ajeno 403; cliente no marca listo | `permissions.test.ts` | pendiente |
-| CA-10 items inválidos → 400; precios del cliente ignorados | `validation.test.ts` | pendiente |
-| CA-11 transiciones inválidas → 409 | `transitions.test.ts` | pendiente |
-| CA-12 `npm run seed` ×2 sin duplicados | `seed.test.ts`; verificación desde estado limpio | pendiente |
-| CA-13 `npm test` pasa y cubre recorrido y CA-8 a CA-11 | `npm test` | pendiente |
-| CA-14 verde de marca, fondo blanco, toques grandes, íconos propios | revisión de diseño de todas las pantallas | pendiente |
-| CA-15 admin da de alta, edita, da de baja y asigna rol; datos inválidos rechazados | recorrido, paso A2; pruebas de usuarios (tarea 2, en curso) | pendiente |
-| CA-16 usuario dado de baja no entra y su sesión previa deja de funcionar | recorrido, paso A3; pruebas de usuarios (tarea 2, en curso) | pendiente |
-| CA-17 admin gestiona categorías y productos con validación; se ve en el kiosco | recorrido, paso A1; pruebas de catálogo (tarea 2, en curso) | pendiente |
-| CA-18 producto no disponible no se puede pedir (ni por «de siempre») | recorrido, pasos A1 y K6; `validation.test.ts` y pruebas nuevas (tarea 2, en curso) | pendiente |
-| CA-19 «Pedí lo de siempre» solo con pedido anterior propio; repite y va al pago | recorrido, pasos K5 y K7 | pendiente |
-| CA-20 «Pedí lo de siempre» nunca usa pedidos de otro cliente | pruebas de `getLastOrder` (tarea 2, en curso) | pendiente |
-| CA-21 solo admin accede a la gestión: 403 en la API y redirección en páginas | recorrido, pasos N2–N3; pruebas de permisos de admin (tarea 2, en curso) | pendiente |
-| CA-22 semilla completa repetible sin duplicar ni pisar | `seed.test.ts` (ampliado, tarea 2, en curso); verificación desde estado limpio | pendiente |
-| CA-23 `npm test` amplía con CA-15 a CA-21 y pasa | `npm test` | pendiente |
-| CA-24 instalación y ejecución desde estado limpio | [Verificación desde estado limpio](#verificación-desde-estado-limpio) | pendiente |
+| CA-1 Google simulado → sesión y menú por categorías | recorrido, paso K1; `flow.test.ts`, `auth.test.ts` | ✅ recorrido en Chrome (Sofía) + pruebas |
+| CA-2 carrito: agregar, cambiar, quitar; total = servidor | recorrido, paso K2; `validation.test.ts` (precios desde la base) | ✅ pruebas (`validation.test.ts`); total del QR = servidor en el recorrido |
+| CA-3 pedido `pendiente_pago`, QR con importe, pago → `pagado` | recorrido, paso K3; `flow.test.ts` | ✅ recorrido (QR $ 5.900 → pago) + `flow.test.ts` |
+| CA-4 pagado aparece en cocina en ≤ 3 s; sin pagar o cancelado nunca | recorrido, pasos K3–C1 (cronometrado a ojo); `permissions.test.ts`, `transitions.test.ts` | ✅ recorrido: el pedido apareció en cocina en ≤ 3 s sin recargar; pruebas |
+| CA-5 «Listo» → aviso en el kiosco en ≤ 3 s | recorrido, paso C2 | ✅ recorrido: aviso «¡Tu pedido está listo!» en ≤ 3 s |
+| CA-6 «Terminar» → `entregado`, cierra sesión, vuelve a la bienvenida | recorrido, paso K4; `flow.test.ts` | ✅ recorrido: «Ya lo retiré · Terminar» volvió a la bienvenida; `flow.test.ts` |
+| CA-7 `/personal` precargada con cocina; un toque cambia a admin; cada rol a su pantalla | recorrido, pasos C0 y A0 | ✅ recorrido: precargada con cocina → `/cocina`; un toque a admin → `/admin/catalogo` |
+| CA-8 sin sesión u otro rol: `/cocina` y `/admin` redirigen; API 401/403 | recorrido, pasos N1–N3; `permissions.test.ts`, `http.test.ts` | ✅ curl: cliente → `/cocina` y `/admin/usuarios` 307 a `/personal`; pruebas |
+| CA-9 pedido ajeno 403; cliente no marca listo | `permissions.test.ts` | ✅ curl: pedido ajeno 403; `permissions.test.ts` |
+| CA-10 items inválidos → 400; precios del cliente ignorados | `validation.test.ts` | ✅ `validation.test.ts` |
+| CA-11 transiciones inválidas → 409 | `transitions.test.ts` | ✅ `transitions.test.ts` |
+| CA-12 `npm run seed` ×2 sin duplicados | `seed.test.ts`; verificación desde estado limpio | ✅ `seed.test.ts`, `demo-seed.test.ts`; seed ×2 en clon limpio |
+| CA-13 `npm test` pasa y cubre recorrido y CA-8 a CA-11 | `npm test` | ✅ `npm test` 175/175 |
+| CA-14 verde de marca, fondo blanco, toques grandes, íconos propios | revisión de diseño de todas las pantallas | ✅ revisión de diseño en Chrome de kiosco, cocina, `/personal`, `/admin/catalogo` y `/admin/usuarios` |
+| CA-15 admin da de alta, edita, da de baja y asigna rol; datos inválidos rechazados | recorrido, paso A2; pruebas de usuarios (tarea 2, en curso) | ✅ recorrido: email repetido rechazado con mensaje; baja con confirmación en la fila; `admin-users.test.ts`, `review-rules.test.ts` |
+| CA-16 usuario dado de baja no entra y su sesión previa deja de funcionar | recorrido, paso A3; pruebas de usuarios (tarea 2, en curso) | ✅ recorrido: Camila dada de baja desaparece del selector y su login da 401; pruebas |
+| CA-17 admin gestiona categorías y productos con validación; se ve en el kiosco | recorrido, paso A1; pruebas de catálogo (tarea 2, en curso) | ✅ recorrido: precio de Espresso 2.200 → 2.500 y alta de «Flat white» visibles en el kiosco; precio 0 rechazado; `admin-catalog.test.ts` |
+| CA-18 producto no disponible no se puede pedir (ni por «de siempre») | recorrido, pasos A1 y K6; `validation.test.ts` y pruebas nuevas (tarea 2, en curso) | ✅ recorrido: Cappuccino no disponible → deshabilitado en el menú y «de siempre» de Sofía bloqueado con aviso; pruebas |
+| CA-19 «Pedí lo de siempre» solo con pedido anterior propio; repite y va al pago | recorrido, pasos K5 y K7 | ✅ recorrido: Sofía → «Pedí lo de siempre» → QR directo; `last-order.test.ts` (Camila → null) |
+| CA-20 «Pedí lo de siempre» nunca usa pedidos de otro cliente | pruebas de `getLastOrder` (tarea 2, en curso) | ✅ `last-order.test.ts`; curl: Lucas recibe solo el suyo |
+| CA-21 solo admin accede a la gestión: 403 en la API y redirección en páginas | recorrido, pasos N2–N3; pruebas de permisos de admin (tarea 2, en curso) | ✅ recorrido: cocina → `/admin/usuarios` redirige; API admin 403 (cocina) y 401 (cookie del kiosco); `http-admin.test.ts` |
+| CA-22 semilla completa repetible sin duplicar ni pisar | `seed.test.ts` (ampliado, tarea 2, en curso); verificación desde estado limpio | ✅ `demo-seed.test.ts`, `review-rules.test.ts`; seed ×2 en clon limpio |
+| CA-23 `npm test` amplía con CA-15 a CA-21 y pasa | `npm test` | ✅ `npm test` 175/175 (13 archivos) |
+| CA-24 instalación y ejecución desde estado limpio | [Verificación desde estado limpio](#verificación-desde-estado-limpio) | ✅ ver [Verificación desde estado limpio](#verificación-desde-estado-limpio) |
 
 ## Pruebas automáticas
 
@@ -53,13 +53,17 @@ npm run typecheck
 | `tests/transitions.test.ts` | transiciones válidas e inválidas (`INVALID_TRANSITION`) |
 | `tests/seed.test.ts` | semilla idempotente |
 | `tests/http.test.ts` | Route Handlers: orden sesión → rol → existencia, chequeo de `Origin`, una cookie por pantalla |
-| pruebas de administración de usuarios | (tarea 2, en curso) CA-15, CA-16, CA-21 |
-| pruebas de administración del catálogo | (tarea 2, en curso) CA-17, CA-18, CA-21 |
-| pruebas de «Pedí lo de siempre» | (tarea 2, en curso) CA-18, CA-19, CA-20 |
+| `tests/admin-users.test.ts` | CA-15, CA-16, CA-21: permisos, validación de alta/edición, baja y reactivación, contraseña de demo del personal nuevo |
+| `tests/admin-catalog.test.ts` | CA-17, CA-18, CA-21: categorías y productos, validación, slugs, cambios visibles en el kiosco |
+| `tests/last-order.test.ts` | CA-18, CA-19, CA-20: `getLastOrder` propio, ignora pendientes/cancelados, repetir con precios actuales |
+| `tests/demo-seed.test.ts` | CA-22: semilla completa idempotente, no pisa ediciones ni reactiva bajas |
+| `tests/http-admin.test.ts` | rutas `/api/admin/**` y `GET /api/orders/last`: 401/403, cookie por pantalla, `Origin` |
+| `tests/review-rules.test.ts` | reglas surgidas de la revisión: siempre queda un admin activo, actor degradado → 403, nombres con control o invisibles, semilla para clientes sin historial |
+| `tests/http-helpers.ts` | utilidades para invocar Route Handlers |
 
 El tiempo real (polling) no tiene pruebas automáticas: se comprueba en el recorrido.
 
-Resultado de la última ejecución: pendiente.
+Resultado de la última ejecución (2026-11-19): `npm test` → 13 archivos, **175 pruebas, 0 fallas**; `npm run typecheck` sin errores.
 
 ## Recorrido de demostración
 
@@ -102,7 +106,18 @@ kiosco, idealmente en vertical. Pueden ser dos pestañas del mismo navegador.
 - N4. Como admin, intentar darse de baja o quitarse el rol admin → se rechaza.
 - N5. Entrar a `/personal` con una contraseña incorrecta → se rechaza.
 
-Resultado: pendiente.
+Resultado (2026-11-19, Chrome con dos pestañas sobre `next dev` y base nueva; los casos N con curl
+y `fetch` desde la página): C0, K1, K3, C1, C2, K4, K5 (con Sofía), A0, A1, K6, A2 (email repetido,
+alta de producto, precio 0 rechazado), A3 (baja de Camila), N1 (cliente → `/cocina` y
+`/admin/usuarios`: 307), N2 (cocina: 307 y API 403), N3 (cookie del kiosco en `/api/admin/*`: 401)
+**pasaron**. Además: pedido ajeno 403 y login de cliente dado de baja 401. K2, K7, N4 y N5 se
+cubren con pruebas automáticas (no se repitieron a mano). Sin errores en el log del servidor.
+
+**Revisión**: dos revisores independientes (usuarios + «de siempre»; catálogo + semilla + íconos)
+encontraron 2 bugs de lógica (podía quedar sin admins con un actor desactualizado; la tarjeta «de
+siempre» se perdía al retomar un pedido pendiente) y 3 de interfaz en el catálogo (el formulario de
+edición pisaba cambios, reordenamiento a medias, interruptor optimista). Todos se corrigieron y
+quedaron cubiertos por `review-rules.test.ts` o verificados en la app.
 
 ## Verificación desde estado limpio
 
